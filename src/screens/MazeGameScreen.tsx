@@ -6,7 +6,7 @@ import { ControlPanel } from '../components/ControlPanel'
 import { Colors, Typography, Spacing } from '../theme/Colors'
 
 export const MazeGameScreen: React.FC = () => {
-  const [maze] = useState(() => generateLargeSparseMaze()) 
+  const [maze] = useState(() =>  MazeCanvas({ playerX: 0, playerY: 0, cellSize: 40, revealedPaths: false })) 
   const [game] = useState(() => new MazeGame())
   const [gameState, setGameState] = useState<GameState>(game.getState())
 
