@@ -4,7 +4,6 @@ import { Colors } from '../theme/Colors'
 import { Direction } from '../game/MazeGame'
 
 interface MazeCanvasProps {
-  maze: number[][]
   playerX: number
   playerY: number
   cellSize: number
@@ -12,14 +11,23 @@ interface MazeCanvasProps {
   onMove?: (direction: Direction) => void
 }
 
+const generateLargeSparseMaze = (): number[][] =>
+  Array.from({ length: 100 }, (_, row) =>
+    Array.from({ length: 100 }, (_, col) => {
+      if (row === 0 || row === 99 || col === 0 || col === 99) return 1
+      if ((row % 7 === 0 && col % 11 === 0) || (row % 13 === 0 && col % 17 === 0)) return 1
+      return 0
+    })
+  )
+
 export const MazeCanvas: React.FC<MazeCanvasProps> = ({
-  maze,
   playerX,
   playerY,
   cellSize,
   revealedPaths,
   onMove
 }) => {
+  const maze = useRef(generateLargeSparseMaze()).current
   const width = maze[0].length * cellSize
   const height = maze.length * cellSize
   const startRef = useRef<{ x: number; y: number } | null>(null)
@@ -27,13 +35,7 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
 
   return (
     <View
-      style={[
-        styles.container,
-        {
-          width,
-          height
-        }
-      ]}
+      style={[styles.container, { width, height }]}
       onStartShouldSetResponder={() => true}
       onResponderGrant={(e) => {
         const { locationX, locationY } = e.nativeEvent
@@ -61,7 +63,9 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
     >
       {maze.map((row, y) =>
         row.map((cell, x) => {
-          const isVisible = revealedPaths || Math.abs(x - playerX) < 6 && Math.abs(y - playerY) < 6
+          const isVisible =
+            revealedPaths ||
+            (x >= playerX - 5 && x <= playerX + 5 && y >= playerY - 5 && y <= playerY + 5)
           return (
             <View
               key={`${x}-${y}`}
@@ -70,10 +74,8 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
                 {
                   width: cellSize,
                   height: cellSize,
-                  opacity: isVisible ? 1 : 0.15,
-                  backgroundColor: cell === 0 ? Colors.path : Colors.wall
-                },
-                {
+                  opacity: isVisible ? 1 : 0.1,
+                  backgroundColor: cell === 0 ? Colors.path : Colors.wall,
                   position: 'absolute',
                   left: x * cellSize,
                   top: y * cellSize
@@ -103,9 +105,7 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    backgroundColor: Colors.surface,
-    borderRadius: 200,
-    overflow: 'hidden'
+    backgroundColor: Colors.surface
   },
   cell: {
     borderWidth: 0
@@ -115,3 +115,4 @@ const styles = StyleSheet.create({
     position: 'absolute'
   }
 })
+export default MazeCanvas

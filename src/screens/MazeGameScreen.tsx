@@ -6,6 +6,7 @@ import { ControlPanel } from '../components/ControlPanel'
 import { Colors, Typography, Spacing } from '../theme/Colors'
 
 export const MazeGameScreen: React.FC = () => {
+  const [maze] = useState(() => generateLargeSparseMaze()) 
   const [game] = useState(() => new MazeGame())
   const [gameState, setGameState] = useState<GameState>(game.getState())
 
@@ -49,7 +50,7 @@ export const MazeGameScreen: React.FC = () => {
       <View style={styles.content}>
         <View style={styles.canvasContainer}>
           <MazeCanvas
-            maze={gameState.maze}
+            maze={maze}
             playerX={gameState.playerX}
             playerY={gameState.playerY}
             cellSize={game.cellSize}
@@ -73,43 +74,10 @@ export const MazeGameScreen: React.FC = () => {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background
-  },
-  header: {
-    backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg
-  },
-  title: {
-    ...Typography.title,
-    color: 'white',
-    fontWeight: 'bold'
-  },
-  subtitle: {
-    ...Typography.caption,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: Spacing.xs,
-    fontWeight: Typography.caption?.fontWeight === 'bold' || Typography.caption?.fontWeight === 'normal'
-      || Typography.caption?.fontWeight === '100' || Typography.caption?.fontWeight === '200'
-      || Typography.caption?.fontWeight === '300' || Typography.caption?.fontWeight === '400'
-      || Typography.caption?.fontWeight === '500' || Typography.caption?.fontWeight === '600'
-      || Typography.caption?.fontWeight === '700' || Typography.caption?.fontWeight === '800'
-      || Typography.caption?.fontWeight === '900'
-      ? Typography.caption.fontWeight
-      : undefined
-  },
-  content: {
-    flex: 1,
-    padding: Spacing.md,
-    gap: Spacing.md
-  },
-  canvasContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: 8,
-    padding: Spacing.md
-  }
+  container: { flex: 1, backgroundColor: Colors.background },
+  header: { backgroundColor: Colors.primary, paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg },
+  title: { ...Typography.title, color: 'white', fontWeight: 'bold' },
+  subtitle: { ...Typography.caption, color: 'rgba(255, 255, 255, 0.8)', marginTop: Spacing.xs, fontWeight: '400' },
+  content: { flex: 1, padding: Spacing.md, gap: Spacing.md },
+  canvasContainer: { alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surface, borderRadius: 8, padding: Spacing.md }
 })
