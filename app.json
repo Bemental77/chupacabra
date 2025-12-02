@@ -1,0 +1,22 @@
+{
+  "name": "Chupacabra",
+  "displayName": "Chupacabra",
+  "expo": {
+    "name": "Chupacabra Maze Game",
+    "slug": "chupacabra",
+    "version": "1.0.0",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./src/assets/favicon.png"
+    }
+  }
+}

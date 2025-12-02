@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -e
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+# Set default GRADLE_USER_HOME
+export GRADLE_USER_HOME="${GRADLE_USER_HOME:=$HOME/.gradle}"
+
+# Create our gradle wrapper dir
+mkdir -p "$DIR/.gradle"
+
+# Store our wrapper jar there
+exec "$DIR/gradlew" "$@"
