@@ -1,41 +1,41 @@
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, Text } from 'react-native';
-import { MazeGame, Direction, GameState } from '../game/MazeGame';
-import { MazeCanvas } from '../components/MazeCanvas';
-import { ControlPanel } from '../components/ControlPanel';
-import { Colors, Typography, Spacing } from '../theme/Colors';
+import React, { useState, useCallback } from 'react'
+import { View, StyleSheet, SafeAreaView, Text } from 'react-native'
+import { MazeGame, Direction, GameState } from '../game/MazeGame'
+import { MazeCanvas } from '../components/MazeCanvas'
+import { ControlPanel } from '../components/ControlPanel'
+import { Colors, Typography, Spacing } from '../theme/Colors'
 
 export const MazeGameScreen: React.FC = () => {
-  const [game] = useState(() => new MazeGame());
-  const [gameState, setGameState] = useState<GameState>(game.getState());
+  const [game] = useState(() => new MazeGame())
+  const [gameState, setGameState] = useState<GameState>(game.getState())
 
   const handleMove = useCallback((direction: Direction) => {
-    setGameState(game.movePlayer(direction));
-  }, [game]);
+    setGameState(game.movePlayer(direction))
+  }, [game])
+
+  const handleMoveContinuous = useCallback((direction: Direction | null) => {
+    if (direction !== null) setGameState(game.movePlayer(direction))
+  }, [game])
 
   const handleJump = useCallback((direction: Direction) => {
-    setGameState(game.jump(direction));
-  }, [game]);
+    setGameState(game.jump(direction))
+  }, [game])
 
   const handleBreakWall = useCallback((direction: Direction) => {
-    setGameState(game.breakWall(direction));
-  }, [game]);
+    setGameState(game.breakWall(direction))
+  }, [game])
 
   const handleTogglePause = useCallback(() => {
-    setGameState(game.togglePause());
-  }, [game]);
-
-  const handleTeleport = useCallback((x: number, y: number) => {
-      setGameState(game.teleport(x, y));
-    }, [game]);
+    setGameState(game.togglePause())
+  }, [game])
 
   const handleToggleReveal = useCallback(() => {
-    setGameState(game.toggleRevealPath());
-  }, [game]);
+    setGameState(game.toggleRevealPath())
+  }, [game])
 
   const handleReset = useCallback(() => {
-    setGameState(game.reset());
-  }, [game]);
+    setGameState(game.reset())
+  }, [game])
 
   return (
     <SafeAreaView style={styles.container}>
@@ -54,13 +54,14 @@ export const MazeGameScreen: React.FC = () => {
             playerY={gameState.playerY}
             cellSize={game.cellSize}
             revealedPaths={gameState.revealedPaths}
+            onMove={handleMove}
           />
         </View>
+
         <ControlPanel
-          onMove={handleMove}
+          onMoveContinuous={handleMoveContinuous}
           onJump={handleJump}
           onBreakWall={handleBreakWall}
-          onTeleport={handleTeleport}
           onTogglePause={handleTogglePause}
           onToggleReveal={handleToggleReveal}
           onReset={handleReset}
@@ -68,23 +69,23 @@ export const MazeGameScreen: React.FC = () => {
         />
       </View>
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.background
   },
   header: {
     backgroundColor: Colors.primary,
     paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.lg
   },
   title: {
     ...Typography.title,
     color: 'white',
-    fontWeight: 'bold', // Only allowed values: 'normal', 'bold', '100', ..., '900'
+    fontWeight: 'bold'
   },
   subtitle: {
     ...Typography.caption,
@@ -97,18 +98,18 @@ const styles = StyleSheet.create({
       || Typography.caption?.fontWeight === '700' || Typography.caption?.fontWeight === '800'
       || Typography.caption?.fontWeight === '900'
       ? Typography.caption.fontWeight
-      : undefined,
+      : undefined
   },
   content: {
     flex: 1,
     padding: Spacing.md,
-    gap: Spacing.md,
+    gap: Spacing.md
   },
   canvasContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.surface,
     borderRadius: 8,
-    padding: Spacing.md,
-  },
-});
+    padding: Spacing.md
+  }
+})
