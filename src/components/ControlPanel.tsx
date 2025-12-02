@@ -13,7 +13,7 @@ interface ControlPanelProps {
   onMove: (direction: Direction) => void;
   onJump: (direction: Direction) => void;
   onBreakWall: (direction: Direction) => void;
-  onTeleport: () => void;
+  onTeleport: (x: number, y: number) => void;
   onTogglePause: () => void;
   onToggleReveal: () => void;
   onReset: () => void;
@@ -164,6 +164,7 @@ const styles = StyleSheet.create({
     ...Typography.heading,
     color: Colors.text,
     marginBottom: Spacing.md,
+    fontWeight: '600', // Ensure this matches allowed values: 'normal', 'bold', '100'-'900'
   },
   dPadContainer: {
     alignItems: 'center',

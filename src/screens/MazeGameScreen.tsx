@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, Text } from 'react-native';
 import { MazeGame, Direction, GameState } from '../game/MazeGame';
-import { MazeCanvas } from './MazeCanvas';
-import { ControlPanel } from './ControlPanel';
+import { MazeCanvas } from '../components/MazeCanvas';
+import { ControlPanel } from '../components/ControlPanel';
 import { Colors, Typography, Spacing } from '../theme/Colors';
 
 export const MazeGameScreen: React.FC = () => {
@@ -24,6 +24,10 @@ export const MazeGameScreen: React.FC = () => {
   const handleTogglePause = useCallback(() => {
     setGameState(game.togglePause());
   }, [game]);
+
+  const handleTeleport = useCallback((x: number, y: number) => {
+      setGameState(game.teleport(x, y));
+    }, [game]);
 
   const handleToggleReveal = useCallback(() => {
     setGameState(game.toggleRevealPath());
@@ -52,11 +56,11 @@ export const MazeGameScreen: React.FC = () => {
             revealedPaths={gameState.revealedPaths}
           />
         </View>
-
         <ControlPanel
           onMove={handleMove}
           onJump={handleJump}
           onBreakWall={handleBreakWall}
+          onTeleport={handleTeleport}
           onTogglePause={handleTogglePause}
           onToggleReveal={handleToggleReveal}
           onReset={handleReset}
@@ -80,11 +84,20 @@ const styles = StyleSheet.create({
   title: {
     ...Typography.title,
     color: 'white',
+    fontWeight: 'bold', // Only allowed values: 'normal', 'bold', '100', ..., '900'
   },
   subtitle: {
     ...Typography.caption,
     color: 'rgba(255, 255, 255, 0.8)',
     marginTop: Spacing.xs,
+    fontWeight: Typography.caption?.fontWeight === 'bold' || Typography.caption?.fontWeight === 'normal'
+      || Typography.caption?.fontWeight === '100' || Typography.caption?.fontWeight === '200'
+      || Typography.caption?.fontWeight === '300' || Typography.caption?.fontWeight === '400'
+      || Typography.caption?.fontWeight === '500' || Typography.caption?.fontWeight === '600'
+      || Typography.caption?.fontWeight === '700' || Typography.caption?.fontWeight === '800'
+      || Typography.caption?.fontWeight === '900'
+      ? Typography.caption.fontWeight
+      : undefined,
   },
   content: {
     flex: 1,
