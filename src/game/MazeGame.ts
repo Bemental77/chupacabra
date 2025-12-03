@@ -2,31 +2,31 @@ export enum Direction {
   UP = 'UP',
   DOWN = 'DOWN',
   LEFT = 'LEFT',
-  RIGHT = 'RIGHT',
+  RIGHT = 'RIGHT'
 }
 
 export interface GameState {
-  maze: number[][];
-  playerX: number;
-  playerY: number;
-  isPaused: boolean;
-  revealedPaths: boolean;
+  maze: number[][]
+  playerX: number
+  playerY: number
+  isPaused: boolean
+  revealedPaths: boolean
 }
 
 export class MazeGame {
-  private maze: number[][];
-  private playerX: number = 1;
-  private playerY: number = 1;
-  private isPaused: boolean = false;
-  private revealedPaths: boolean = false;
-  readonly cellSize: number = 40;
+  private maze: number[][]
+  private playerX: number = 1
+  private playerY: number = 1
+  private isPaused: boolean = false
+  private revealedPaths: boolean = false
+  readonly speed: number = 5
 
-  constructor(maze: number[][] ) {
+  constructor(maze: number[][]) {
     this.maze = maze
   }
 
   getMaze(): number[][] {
-    return this.maze;
+    return this.maze
   }
 
   getState(): GameState {
@@ -35,154 +35,73 @@ export class MazeGame {
       playerX: this.playerX,
       playerY: this.playerY,
       isPaused: this.isPaused,
-      revealedPaths: this.revealedPaths,
-    };
+      revealedPaths: this.revealedPaths
+    }
   }
 
   movePlayer(direction: Direction): GameState {
-    if (this.isPaused) return this.getState();
+    if (this.isPaused) return this.getState()
 
-    let newX = this.playerX;
-    let newY = this.playerY;
+    let newX = this.playerX
+    let newY = this.playerY
 
-    switch (direction) {
-      case Direction.UP:
-        newY--;
-        break;
-      case Direction.DOWN:
-        newY++;
-        break;
-      case Direction.LEFT:
-        newX--;
-        break;
-      case Direction.RIGHT:
-        newX++;
-        break;
-    }
+    if (direction === Direction.UP) newY -= this.speed
+    if (direction === Direction.DOWN) newY += this.speed
+    if (direction === Direction.LEFT) newX -= this.speed
+    if (direction === Direction.RIGHT) newX += this.speed
 
-    // Check bounds and walls
-    if (
-      newX >= 0 &&
-      newX < this.maze[0].length &&
-      newY >= 0 &&
-      newY < this.maze.length &&
-      this.maze[newY][newX] === 0
-    ) {
-      this.playerX = newX;
-      this.playerY = newY;
-    }
+    this.playerX = newX
+    this.playerY = newY
 
-    return this.getState();
+    return this.getState()
   }
 
   jump(direction: Direction): GameState {
-    if (this.isPaused) return this.getState();
+    if (this.isPaused) return this.getState()
 
-    let newX = this.playerX;
-    let newY = this.playerY;
+    let newX = this.playerX
+    let newY = this.playerY
 
-    // Jump 2 cells in the direction
-    switch (direction) {
-      case Direction.UP:
-        newY -= 2;
-        break;
-      case Direction.DOWN:
-        newY += 2;
-        break;
-      case Direction.LEFT:
-        newX -= 2;
-        break;
-      case Direction.RIGHT:
-        newX += 2;
-        break;
-    }
+    if (direction === Direction.UP) newY -= this.speed * 4
+    if (direction === Direction.DOWN) newY += this.speed * 4
+    if (direction === Direction.LEFT) newX -= this.speed * 4
+    if (direction === Direction.RIGHT) newX += this.speed * 4
 
-    // Check bounds and if destination is a path
-    if (
-      newX >= 0 &&
-      newX < this.maze[0].length &&
-      newY >= 0 &&
-      newY < this.maze.length &&
-      this.maze[newY][newX] === 0
-    ) {
-      this.playerX = newX;
-      this.playerY = newY;
-    }
+    this.playerX = newX
+    this.playerY = newY
 
-    return this.getState();
+    return this.getState()
   }
 
-  breakWall(direction: Direction): GameState {
-    if (this.isPaused) return this.getState();
-
-    let wallX = this.playerX;
-    let wallY = this.playerY;
-
-    switch (direction) {
-      case Direction.UP:
-        wallY--;
-        break;
-      case Direction.DOWN:
-        wallY++;
-        break;
-      case Direction.LEFT:
-        wallX--;
-        break;
-      case Direction.RIGHT:
-        wallX++;
-        break;
-    }
-
-    // Check bounds and if it's a wall
-    if (
-      wallX >= 0 &&
-      wallX < this.maze[0].length &&
-      wallY >= 0 &&
-      wallY < this.maze.length &&
-      this.maze[wallY][wallX] === 1
-    ) {
-      // Break the wall
-      this.maze[wallY][wallX] = 0;
-    }
-
-    return this.getState();
+  breakWall(): GameState {
+    return this.getState()
   }
 
   teleport(x: number, y: number): GameState {
-    if (this.isPaused) return this.getState();
+    if (this.isPaused) return this.getState()
 
-    // Check bounds and if destination is a path
-    if (
-      x >= 0 &&
-      x < this.maze[0].length &&
-      y >= 0 &&
-      y < this.maze.length &&
-      this.maze[y][x] === 0
-    ) {
-      this.playerX = x;
-      this.playerY = y;
-    }
+    this.playerX = x
+    this.playerY = y
 
-    return this.getState();
+    return this.getState()
   }
 
   toggleRevealPath(): GameState {
-    this.revealedPaths = !this.revealedPaths;
-    return this.getState();
+    this.revealedPaths = !this.revealedPaths
+    return this.getState()
   }
 
   togglePause(): GameState {
-    this.isPaused = !this.isPaused;
-    return this.getState();
+    this.isPaused = !this.isPaused
+    return this.getState()
   }
 
   reset(): GameState {
-    this.playerX = 1;
-    this.playerY = 1;
-    this.isPaused = false;
-    this.revealedPaths = false;
-    // Reset maze
-    this.maze = this.maze.map(row => row.slice());
-    return this.getState();
+    this.playerX = 1
+    this.playerY = 1
+    this.isPaused = false
+    this.revealedPaths = false
+    this.maze = this.maze.map(r => r.slice())
+    return this.getState()
   }
 }

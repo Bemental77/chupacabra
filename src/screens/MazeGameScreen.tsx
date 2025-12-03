@@ -23,7 +23,7 @@ export const MazeGameScreen: React.FC = () => {
   }, [game])
 
   const handleBreakWall = useCallback((direction: Direction) => {
-    setGameState(game.breakWall(direction))
+    setGameState(game.breakWall())
   }, [game])
 
   const handleTogglePause = useCallback(() => {
