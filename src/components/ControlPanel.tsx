@@ -38,7 +38,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     directionRef.current = direction
     intervalRef.current = setInterval(() => {
       onMoveContinuous(direction)
-    }, 50)
+    }, 1)
   }
 
   const stopContinuousMove = () => {

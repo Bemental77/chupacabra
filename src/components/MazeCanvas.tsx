@@ -32,7 +32,7 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
   const width = maze[0].length * cellSize
   const height = maze.length * cellSize
   const startRef = useRef<{ x: number; y: number } | null>(null)
-  const threshold = 10
+  const threshold = 1
 
   return (
     <View

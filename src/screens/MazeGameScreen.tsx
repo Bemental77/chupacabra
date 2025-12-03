@@ -6,7 +6,7 @@ import { ControlPanel } from '../components/ControlPanel'
 import { Colors, Typography, Spacing } from '../theme/Colors'
 
 export const MazeGameScreen: React.FC = () => {
-  const [maze] = useState(() =>  generateLargeSparseMaze())
+  const [maze] = useState(() => generateLargeSparseMaze())
   const [game] = useState(() => new MazeGame())
   const [gameState, setGameState] = useState<GameState>(game.getState())
 
@@ -48,7 +48,7 @@ export const MazeGameScreen: React.FC = () => {
       </View>
 
       <View style={styles.content}>
-        <View style={styles.canvasContainer}>
+        <View style={{ flex: 3, width: '100%' }}>
           <MazeCanvas
             maze={maze}
             playerX={gameState.playerX}
@@ -59,15 +59,17 @@ export const MazeGameScreen: React.FC = () => {
           />
         </View>
 
-        <ControlPanel
-          onMoveContinuous={handleMoveContinuous}
-          onJump={handleJump}
-          onBreakWall={handleBreakWall}
-          onTogglePause={handleTogglePause}
-          onToggleReveal={handleToggleReveal}
-          onReset={handleReset}
-          isPaused={gameState.isPaused}
-        />
+        <View style={{ flex: 2, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+          <ControlPanel
+            onMoveContinuous={handleMoveContinuous}
+            onJump={handleJump}
+            onBreakWall={handleBreakWall}
+            onTogglePause={handleTogglePause}
+            onToggleReveal={handleToggleReveal}
+            onReset={handleReset}
+            isPaused={gameState.isPaused}
+          />
+        </View>
       </View>
     </SafeAreaView>
   )
@@ -78,6 +80,5 @@ const styles = StyleSheet.create({
   header: { backgroundColor: Colors.primary, paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg },
   title: { ...Typography.title, color: 'white', fontWeight: 'bold' },
   subtitle: { ...Typography.caption, color: 'rgba(255, 255, 255, 0.8)', marginTop: Spacing.xs, fontWeight: '400' },
-  content: { flex: 1, padding: Spacing.md, gap: Spacing.md },
-  canvasContainer: { alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surface, borderRadius: 8, padding: Spacing.md }
+  content: { flex: 1, padding: Spacing.md, gap: Spacing.md }
 })
