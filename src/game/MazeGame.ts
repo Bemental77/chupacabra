@@ -21,20 +21,8 @@ export class MazeGame {
   private revealedPaths: boolean = false;
   readonly cellSize: number = 40;
 
-  constructor() {
-    // Maze: 0 = path, 1 = wall
-    this.maze = [
-      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      [1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-      [1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
-      [1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
-      [1, 0, 1, 1, 1, 0, 1, 0, 1, 1],
-      [1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-      [1, 1, 1, 0, 1, 1, 1, 1, 0, 1],
-      [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-      [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
-      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    ];
+  constructor(maze: number[][] ) {
+    this.maze = maze
   }
 
   getMaze(): number[][] {

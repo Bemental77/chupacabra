@@ -7,7 +7,7 @@ import { Colors, Typography, Spacing } from '../theme/Colors'
 
 export const MazeGameScreen: React.FC = () => {
   const [maze] = useState(() => generateLargeSparseMaze())
-  const [game] = useState(() => new MazeGame())
+  const [game] = useState(() => new MazeGame([  ...maze.map(row => [...row]) ]))
   const [gameState, setGameState] = useState<GameState>(game.getState())
 
   const handleMove = useCallback((direction: Direction) => {

@@ -64,9 +64,7 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
     >
       {maze.map((row, y) =>
         row.map((cell, x) => {
-          const isVisible =
-            revealedPaths ||
-            (x >= playerX - 5 && x <= playerX + 5 && y >= playerY - 5 && y <= playerY + 5)
+          const isVisible = cell === 1 || revealedPaths || (x >= playerX - 5 && x <= playerX + 5 && y >= playerY - 5 && y <= playerY + 5)
           return (
             <View
               key={`${x}-${y}`}
