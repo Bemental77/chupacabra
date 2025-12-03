@@ -9,9 +9,10 @@ interface MazeCanvasProps {
   cellSize: number
   revealedPaths: boolean
   onMove?: (direction: Direction) => void
+  maze: number[][]
 }
 
-const generateLargeSparseMaze = (): number[][] =>
+export const generateLargeSparseMaze = (): number[][] =>
   Array.from({ length: 100 }, (_, row) =>
     Array.from({ length: 100 }, (_, col) => {
       if (row === 0 || row === 99 || col === 0 || col === 99) return 1

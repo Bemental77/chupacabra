@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react'
 import { View, StyleSheet, SafeAreaView, Text } from 'react-native'
 import { MazeGame, Direction, GameState } from '../game/MazeGame'
-import { MazeCanvas } from '../components/MazeCanvas'
+import { MazeCanvas, generateLargeSparseMaze } from '../components/MazeCanvas'
 import { ControlPanel } from '../components/ControlPanel'
 import { Colors, Typography, Spacing } from '../theme/Colors'
 
 export const MazeGameScreen: React.FC = () => {
-  const [maze] = useState(() =>  MazeCanvas({ playerX: 0, playerY: 0, cellSize: 40, revealedPaths: false })) 
+  const [maze] = useState(() =>  generateLargeSparseMaze())
   const [game] = useState(() => new MazeGame())
   const [gameState, setGameState] = useState<GameState>(game.getState())
 
