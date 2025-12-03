@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { View, StyleSheet, SafeAreaView, Text, Dimensions } from 'react-native'
-import { MazeGame, Direction, GameState } from '../game/MazeGame'
+import { MazeGame, GameState } from '../game/MazeGame'
 import { MazeCanvas } from '../components/MazeCanvas'
 import { ControlPanel } from '../components/ControlPanel'
 import { Colors, Typography, Spacing } from '../theme/Colors'
@@ -10,19 +10,19 @@ export const MazeGameScreen: React.FC = () => {
   const [game] = useState(() => new MazeGame([]))
   const [gameState, setGameState] = useState<GameState>(game.getState())
 
-  const handleMove = useCallback((direction: Direction) => {
-    setGameState(game.movePlayer(direction))
+  const handleMove = useCallback((dx: number, dy: number) => {
+    setGameState(game.moveByDelta(dx, dy))
   }, [game])
 
-  const handleMoveContinuous = useCallback((direction: Direction | null) => {
-    if (direction !== null) setGameState(game.movePlayer(direction))
+  const handleMoveContinuous = useCallback((dx: number, dy: number) => {
+    setGameState(game.moveByDelta(dx, dy))
   }, [game])
 
-  const handleJump = useCallback((direction: Direction) => {
-    setGameState(game.jump(direction))
+  const handleJump = useCallback((dx: number, dy: number) => {
+    setGameState(game.moveByDelta(dx * 4, dy * 4))
   }, [game])
 
-  const handleBreakWall = useCallback((direction: Direction) => {
+  const handleBreakWall = useCallback(() => {
     setGameState(game.breakWall())
   }, [game])
 

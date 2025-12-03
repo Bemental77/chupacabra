@@ -4,13 +4,13 @@ import { Colors, Spacing, Typography } from '../theme/Colors'
 import { Direction } from '../game/MazeGame'
 
 interface ControlPanelProps {
-  onJump: (direction: Direction) => void
+  onJump: (dx: number, dy: number) => void
   onBreakWall: (direction: Direction) => void
   onTogglePause: () => void
   onToggleReveal: () => void
   onReset: () => void
   isPaused: boolean
-  onMoveContinuous: (direction: Direction | null) => void
+  onMoveContinuous: (dx: number, dy: number) => void
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -27,24 +27,23 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   const knobSize = 60
   const radius = joystickSize / 2
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const lastMove = useRef({ dx: 0, dy: 0 })
 
-const startContinuousMove = (dx: number, dy: number) => {
-  if (intervalRef.current) clearInterval(intervalRef.current)
-  let direction: Direction | null = null
-  if (Math.abs(dx) > Math.abs(dy)) direction = dx > 0 ? Direction.RIGHT : Direction.LEFT
-  else if (Math.abs(dy) > 0) direction = dy > 0 ? Direction.DOWN : Direction.UP
-  if (!direction) {
-    onMoveContinuous(null)
-    return
+  const startContinuousMove = (dx: number, dy: number) => {
+    lastMove.current = { dx, dy }
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = setInterval(() => onMoveContinuous(lastMove.current.dx, lastMove.current.dy), 16)
   }
-  intervalRef.current = setInterval(() => onMoveContinuous(direction), 16)
-}
 
-const stopContinuousMove = () => {
-  if (intervalRef.current) clearInterval(intervalRef.current)
-  intervalRef.current = null
-  onMoveContinuous(null)
-}
+  const stopContinuousMove = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = null
+    onMoveContinuous(0, 0)
+  }
+
+  const handleJump = () => {
+    onJump(lastMove.current.dx, lastMove.current.dy)
+  }
 
   const panResponder = useRef(
     PanResponder.create({
@@ -94,23 +93,10 @@ const stopContinuousMove = () => {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Special Moves</Text>
-        <View style={styles.row}>
-          <TouchableOpacity style={styles.smallButton} onPress={() => onJump(Direction.UP)}>
-            <Text style={styles.smallButtonText}>Jump ↑</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.smallButton} onPress={() => onJump(Direction.DOWN)}>
-            <Text style={styles.smallButtonText}>Jump ↓</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.row}>
-          <TouchableOpacity style={styles.smallButton} onPress={() => onJump(Direction.LEFT)}>
-            <Text style={styles.smallButtonText}>Jump ←</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.smallButton} onPress={() => onJump(Direction.RIGHT)}>
-            <Text style={styles.smallButtonText}>Jump →</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.sectionTitle}>Jump</Text>
+        <TouchableOpacity style={styles.smallButton} onPress={handleJump}>
+          <Text style={styles.smallButtonText}>Jump</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.section}>

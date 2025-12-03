@@ -39,22 +39,25 @@ export class MazeGame {
     }
   }
 
-  movePlayer(direction: Direction): GameState {
+  moveByDelta(dx: number, dy: number): GameState {
     if (this.isPaused) return this.getState()
-
-    let newX = this.playerX
-    let newY = this.playerY
-
-    if (direction === Direction.UP) newY -= this.speed
-    if (direction === Direction.DOWN) newY += this.speed
-    if (direction === Direction.LEFT) newX -= this.speed
-    if (direction === Direction.RIGHT) newX += this.speed
-
-    this.playerX = newX
-    this.playerY = newY
-
+    this.playerX += dx
+    this.playerY += dy
     return this.getState()
   }
+
+movePlayer(dx: number, dy: number): GameState {
+  if (this.isPaused) return this.getState()
+
+  const newX = this.playerX + dx
+  const newY = this.playerY + dy
+
+  this.playerX = newX
+  this.playerY = newY
+
+  return this.getState()
+}
+
 
   jump(direction: Direction): GameState {
     if (this.isPaused) return this.getState()

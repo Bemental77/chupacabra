@@ -1,15 +1,13 @@
 import React, { useRef, useEffect } from 'react'
 import { View, StyleSheet, Animated, Image } from 'react-native'
 import { Colors } from '../theme/Colors'
-import { Direction } from '../game/MazeGame'
-
 
 interface MazeCanvasProps {
   playerX: number
   playerY: number
   cellSize: number
   revealedPaths: boolean
-  onMove?: (direction: Direction) => void
+  onMove?: (dx: number, dy: number) => void
   mazeWidth: number
   mazeHeight: number
 }
@@ -32,17 +30,10 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
     if (!s || !onMove) return
     const dx = locationX - s.x
     const dy = locationY - s.y
-    const magnitude = Math.sqrt(dx * dx + dy * dy)
-    if (magnitude === 0) return
-    let direction: Direction
-    const angle = Math.atan2(dy, dx)
-    if (angle >= -Math.PI / 4 && angle < Math.PI / 4) direction = Direction.RIGHT
-    else if (angle >= Math.PI / 4 && angle < 3 * Math.PI / 4) direction = Direction.DOWN
-    else if (angle >= -3 * Math.PI / 4 && angle < -Math.PI / 4) direction = Direction.UP
-    else direction = Direction.LEFT
-    onMove(direction)
+    if (dx === 0 && dy === 0) return
+    onMove(dx, dy)
+    startRef.current = { x: locationX, y: locationY }
   }
-
 
   return (
     <View
