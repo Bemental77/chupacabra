@@ -1,25 +1,22 @@
 import React, { useState, useCallback } from 'react'
-import { View, StyleSheet, SafeAreaView, Text } from 'react-native'
+import { View, StyleSheet, SafeAreaView, Text, Dimensions } from 'react-native'
 import { MazeGame, Direction, GameState } from '../game/MazeGame'
-import { MazeCanvas, generateLargeSparseMaze } from '../components/MazeCanvas'
+import { MazeCanvas } from '../components/MazeCanvas'
 import { ControlPanel } from '../components/ControlPanel'
 import { Colors, Typography, Spacing } from '../theme/Colors'
 
 export const MazeGameScreen: React.FC = () => {
-  const [maze] = useState(() => generateLargeSparseMaze())
-  const [game] = useState(() => new MazeGame([  ...maze.map(row => [...row]) ]))
+  const { width, height } = Dimensions.get('window')
+  const [game] = useState(() => new MazeGame([]))
   const [gameState, setGameState] = useState<GameState>(game.getState())
 
-const handleMove = useCallback((direction: Direction) => {
-  setGameState(game.movePlayer(direction))
-}, [game])
-
-
-const handleMoveContinuous = useCallback((direction: Direction | null) => {
-  if (direction !== null) {
+  const handleMove = useCallback((direction: Direction) => {
     setGameState(game.movePlayer(direction))
-  }
-}, [game])
+  }, [game])
+
+  const handleMoveContinuous = useCallback((direction: Direction | null) => {
+    if (direction !== null) setGameState(game.movePlayer(direction))
+  }, [game])
 
   const handleJump = useCallback((direction: Direction) => {
     setGameState(game.jump(direction))
@@ -53,12 +50,13 @@ const handleMoveContinuous = useCallback((direction: Direction | null) => {
       <View style={styles.content}>
         <View style={{ flex: 3, width: '100%' }}>
           <MazeCanvas
-            maze={maze}
             playerX={gameState.playerX}
             playerY={gameState.playerY}
-            cellSize={game.cellSize}
-            revealedPaths={gameState.revealedPaths}
+            cellSize={50}
+            mazeWidth={width - Spacing.md * 2}
+            mazeHeight={height * 0.6}
             onMove={handleMove}
+            revealedPaths={gameState.revealedPaths}
           />
         </View>
 
