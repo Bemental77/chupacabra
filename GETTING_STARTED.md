@@ -1,8 +1,4 @@
-# Getting Started with React Native Conversion
-
-## 🎉 Congratulations!
-
-Your Android project has been successfully converted to React Native. Here's what to do next:
+:
 
 ## 📋 Quick Start
 
@@ -10,10 +6,8 @@ Your Android project has been successfully converted to React Native. Here's wha
 Download and install Node.js from https://nodejs.org/ (v16 or higher recommended)
 
 ### 2. Install Dependencies
-```bash
-cd c:\Users\casey.bement\dev\chupacbra
 npm install
-```
+
 
 This will install all JavaScript dependencies listed in `package.json`.
 

@@ -3,6 +3,7 @@ import { View, StyleSheet, Animated, Image } from 'react-native'
 import { Colors } from '../theme/Colors'
 import { Direction } from '../game/MazeGame'
 
+
 interface MazeCanvasProps {
   playerX: number
   playerY: number
@@ -42,6 +43,7 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
     onMove(direction)
   }
 
+
   return (
     <View
       style={[styles.container, { width: mazeWidth, height: mazeHeight }]}
@@ -63,7 +65,7 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
         }
       }}
     >
-      <Image source={require('../assets/map.png')} style={{ width: mazeWidth, height: mazeHeight, position: 'absolute' }} />
+      <Image source={{ uri: '/assets/map.png' }} style={{ width: mazeWidth, height: mazeHeight, position: 'absolute' }} />
       <Animated.View
         style={{
           width: cellSize,
