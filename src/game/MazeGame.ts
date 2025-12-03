@@ -182,18 +182,7 @@ export class MazeGame {
     this.isPaused = false;
     this.revealedPaths = false;
     // Reset maze
-    this.maze = [
-      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      [1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-      [1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
-      [1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
-      [1, 0, 1, 1, 1, 0, 1, 0, 1, 1],
-      [1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-      [1, 1, 1, 0, 1, 1, 1, 1, 0, 1],
-      [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-      [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
-      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    ];
+    this.maze = this.maze.map(row => row.slice());
     return this.getState();
   }
 }

@@ -1,5 +1,5 @@
-import React, { useRef } from 'react'
-import { View, StyleSheet } from 'react-native'
+import React, { useRef, useEffect } from 'react'
+import { View, StyleSheet, Animated } from 'react-native'
 import { Colors } from '../theme/Colors'
 import { Direction } from '../game/MazeGame'
 
@@ -32,7 +32,28 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
   const width = maze[0].length * cellSize
   const height = maze.length * cellSize
   const startRef = useRef<{ x: number; y: number } | null>(null)
-  const threshold = 1
+  const moveInterval = useRef<number | null>(null)
+
+  const playerAnim = useRef(new Animated.ValueXY({ x: playerX * cellSize + cellSize * 0.2, y: playerY * cellSize + cellSize * 0.2 })).current
+
+  useEffect(() => {
+    Animated.timing(playerAnim, {
+      toValue: { x: playerX * cellSize + cellSize * 0.2, y: playerY * cellSize + cellSize * 0.2 },
+      duration: 5,
+      useNativeDriver: false
+    }).start()
+  }, [playerX, playerY])
+
+  const handleMove = (locationX: number, locationY: number) => {
+    const s = startRef.current
+    if (!s || !onMove) return
+    const dx = locationX - s.x
+    const dy = locationY - s.y
+    let dir: Direction | null = null
+    if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? Direction.RIGHT : Direction.LEFT
+    else dir = dy > 0 ? Direction.DOWN : Direction.UP
+    if (dir) onMove(dir)
+  }
 
   return (
     <View
@@ -41,25 +62,18 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
       onResponderGrant={(e) => {
         const { locationX, locationY } = e.nativeEvent
         startRef.current = { x: locationX, y: locationY }
+        moveInterval.current = setInterval(() => handleMove(locationX, locationY), 16) as unknown as number
       }}
-      onResponderRelease={(e) => {
-        const s = startRef.current
-        if (!s || !onMove) return
+      onResponderMove={(e) => {
         const { locationX, locationY } = e.nativeEvent
-        const dx = locationX - s.x
-        const dy = locationY - s.y
-        if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) {
-          startRef.current = null
-          return
-        }
-        let dir: Direction | null = null
-        if (Math.abs(dx) > Math.abs(dy)) {
-          dir = dx > 0 ? Direction.RIGHT : Direction.LEFT
-        } else {
-          dir = dy > 0 ? Direction.DOWN : Direction.UP
-        }
+        handleMove(locationX, locationY)
+      }}
+      onResponderRelease={() => {
         startRef.current = null
-        if (dir) onMove(dir)
+        if (moveInterval.current !== null) {
+          clearInterval(moveInterval.current)
+          moveInterval.current = null
+        }
       }}
     >
       {maze.map((row, y) =>
@@ -85,15 +99,14 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
         })
       )}
 
-      <View
+      <Animated.View
         style={[
           styles.player,
           {
             width: cellSize * 0.6,
             height: cellSize * 0.6,
             borderRadius: cellSize * 0.3,
-            left: playerX * cellSize + cellSize * 0.2,
-            top: playerY * cellSize + cellSize * 0.2
+            transform: [{ translateX: playerAnim.x }, { translateY: playerAnim.y }]
           }
         ]}
       />
