@@ -10,13 +10,16 @@ export const MazeGameScreen: React.FC = () => {
   const [game] = useState(() => new MazeGame([  ...maze.map(row => [...row]) ]))
   const [gameState, setGameState] = useState<GameState>(game.getState())
 
-  const handleMove = useCallback((direction: Direction) => {
-    setGameState(game.movePlayer(direction))
-  }, [game])
+const handleMove = useCallback((direction: Direction) => {
+  setGameState(game.movePlayer(direction))
+}, [game])
 
-  const handleMoveContinuous = useCallback((direction: Direction | null) => {
-    if (direction !== null) setGameState(game.movePlayer(direction))
-  }, [game])
+
+const handleMoveContinuous = useCallback((direction: Direction | null) => {
+  if (direction !== null) {
+    setGameState(game.movePlayer(direction))
+  }
+}, [game])
 
   const handleJump = useCallback((direction: Direction) => {
     setGameState(game.jump(direction))

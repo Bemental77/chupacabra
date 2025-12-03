@@ -26,27 +26,25 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   const joystickSize = 120
   const knobSize = 60
   const radius = joystickSize / 2
-  const directionRef = useRef<Direction | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  const startContinuousMove = (direction: Direction | null) => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    if (!direction) {
-      onMoveContinuous(null)
-      return
-    }
-    directionRef.current = direction
-    intervalRef.current = setInterval(() => {
-      onMoveContinuous(direction)
-    }, 1)
-  }
-
-  const stopContinuousMove = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    intervalRef.current = null
-    directionRef.current = null
+const startContinuousMove = (dx: number, dy: number) => {
+  if (intervalRef.current) clearInterval(intervalRef.current)
+  let direction: Direction | null = null
+  if (Math.abs(dx) > Math.abs(dy)) direction = dx > 0 ? Direction.RIGHT : Direction.LEFT
+  else if (Math.abs(dy) > 0) direction = dy > 0 ? Direction.DOWN : Direction.UP
+  if (!direction) {
     onMoveContinuous(null)
+    return
   }
+  intervalRef.current = setInterval(() => onMoveContinuous(direction), 16)
+}
+
+const stopContinuousMove = () => {
+  if (intervalRef.current) clearInterval(intervalRef.current)
+  intervalRef.current = null
+  onMoveContinuous(null)
+}
 
   const panResponder = useRef(
     PanResponder.create({
@@ -62,19 +60,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           ny = (dy / dist) * radius
         }
         setJoystickPos({ x: nx, y: ny })
-
-        let newDirection: Direction | null = null
-        if (Math.abs(nx) > Math.abs(ny)) {
-          if (nx > 20) newDirection = Direction.RIGHT
-          else if (nx < -20) newDirection = Direction.LEFT
-        } else {
-          if (ny > 20) newDirection = Direction.DOWN
-          else if (ny < -20) newDirection = Direction.UP
-        }
-
-        if (newDirection !== directionRef.current) {
-          startContinuousMove(newDirection)
-        }
+        startContinuousMove(nx / radius, ny / radius)
       },
       onPanResponderRelease: () => {
         setJoystickPos({ x: 0, y: 0 })
@@ -83,9 +69,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     })
   ).current
 
-  useEffect(() => {
-    return () => stopContinuousMove()
-  }, [])
+  useEffect(() => stopContinuousMove, [])
 
   return (
     <ScrollView style={styles.container}>

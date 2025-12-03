@@ -44,16 +44,23 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({
     }).start()
   }, [playerX, playerY])
 
-  const handleMove = (locationX: number, locationY: number) => {
-    const s = startRef.current
-    if (!s || !onMove) return
-    const dx = locationX - s.x
-    const dy = locationY - s.y
-    let dir: Direction | null = null
-    if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? Direction.RIGHT : Direction.LEFT
-    else dir = dy > 0 ? Direction.DOWN : Direction.UP
-    if (dir) onMove(dir)
-  }
+const handleMove = (locationX: number, locationY: number) => {
+  const s = startRef.current
+  if (!s || !onMove) return
+  const dx = locationX - s.x
+  const dy = locationY - s.y
+  const magnitude = Math.sqrt(dx * dx + dy * dy)
+  if (magnitude === 0) return
+  let direction: Direction
+  const angle = Math.atan2(dy, dx)
+  if (angle >= -Math.PI / 4 && angle < Math.PI / 4) direction = Direction.RIGHT
+  else if (angle >= Math.PI / 4 && angle < 3 * Math.PI / 4) direction = Direction.DOWN
+  else if (angle >= -3 * Math.PI / 4 && angle < -Math.PI / 4) direction = Direction.UP
+  else direction = Direction.LEFT
+  onMove(direction)
+}
+
+
 
   return (
     <View
