@@ -71,10 +71,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   useEffect(() => stopContinuousMove, [])
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Movement</Text>
-        <View style={styles.joystickContainer}>
+    <View style={styles.container}>
+      <View style={styles.bottomRow}>
+        <View style={styles.joystickWrapper}>
           <View style={[styles.joystickBase, { width: joystickSize, height: joystickSize, borderRadius: radius }]}>
             <View
               {...panResponder.panHandlers}
@@ -90,64 +89,57 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             />
           </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Jump</Text>
-        <TouchableOpacity style={styles.smallButton} onPress={handleJump}>
-          <Text style={styles.smallButtonText}>Jump</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.buttonsWrapper}>
+          <TouchableOpacity style={styles.smallButton} onPress={handleJump}>
+            <Text style={styles.smallButtonText}>Jump</Text>
+          </TouchableOpacity>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Break Walls</Text>
-        <View style={styles.row}>
           <TouchableOpacity style={styles.smallButton} onPress={() => onBreakWall(Direction.UP)}>
             <Text style={styles.smallButtonText}>Break ↑</Text>
           </TouchableOpacity>
+
           <TouchableOpacity style={styles.smallButton} onPress={() => onBreakWall(Direction.DOWN)}>
             <Text style={styles.smallButtonText}>Break ↓</Text>
           </TouchableOpacity>
-        </View>
-        <View style={styles.row}>
+
           <TouchableOpacity style={styles.smallButton} onPress={() => onBreakWall(Direction.LEFT)}>
             <Text style={styles.smallButtonText}>Break ←</Text>
           </TouchableOpacity>
+
           <TouchableOpacity style={styles.smallButton} onPress={() => onBreakWall(Direction.RIGHT)}>
             <Text style={styles.smallButtonText}>Break →</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.actionButton, isPaused && styles.pausedButton]} onPress={onTogglePause}>
+            <Text style={styles.actionButtonText}>{isPaused ? 'Resume' : 'Pause'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={onToggleReveal}>
+            <Text style={styles.actionButtonText}>Reveal Path</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.resetButton} onPress={onReset}>
+            <Text style={styles.resetButtonText}>Reset</Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Game Controls</Text>
-        <TouchableOpacity style={[styles.actionButton, isPaused && styles.pausedButton]} onPress={onTogglePause}>
-          <Text style={styles.actionButtonText}>{isPaused ? 'Resume' : 'Pause'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={onToggleReveal}>
-          <Text style={styles.actionButtonText}>Reveal Path</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.resetButton} onPress={onReset}>
-          <Text style={styles.resetButtonText}>Reset</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: Colors.surface, padding: Spacing.md },
-  section: { marginBottom: Spacing.lg },
-  sectionTitle: { ...Typography.heading, color: Colors.text, marginBottom: Spacing.md, fontWeight: '600' },
-  row: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.sm },
-  smallButton: { flex: 1, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: 8, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, width: '100%', justifyContent: 'flex-end', padding: Spacing.md },
+  bottomRow: { flexDirection: 'row', width: '100%', alignItems: 'flex-end' },
+  joystickWrapper: { width: '35%', justifyContent: 'center', alignItems: 'center' },
+  buttonsWrapper: { width: '65%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', alignItems: 'center', gap: Spacing.sm },
+  smallButton: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: 8, backgroundColor: Colors.primary },
   smallButtonText: { color: 'white', fontSize: 12 },
-  actionButton: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderRadius: 8, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.sm },
+  actionButton: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderRadius: 8, backgroundColor: Colors.primary },
   pausedButton: { backgroundColor: '#FF9500' },
   actionButtonText: { color: 'white', fontSize: 14 },
-  resetButton: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderRadius: 8, backgroundColor: Colors.textSecondary, justifyContent: 'center', alignItems: 'center' },
+  resetButton: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderRadius: 8, backgroundColor: Colors.textSecondary },
   resetButtonText: { color: 'white', fontSize: 14 },
-  joystickContainer: { justifyContent: 'center', alignItems: 'center' },
   joystickBase: { backgroundColor: '#333', opacity: 0.4, justifyContent: 'center', alignItems: 'center' },
   joystickKnob: { backgroundColor: Colors.primary, position: 'absolute' }
 })
