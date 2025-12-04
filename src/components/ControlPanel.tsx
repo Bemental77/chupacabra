@@ -129,10 +129,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, width: '100%', justifyContent: 'flex-end', padding: Spacing.md },
-  bottomRow: { flexDirection: 'row', width: '100%', alignItems: 'flex-end' },
-  joystickWrapper: { width: '35%', justifyContent: 'center', alignItems: 'center' },
-  buttonsWrapper: { width: '65%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', alignItems: 'center', gap: Spacing.sm },
+  container: { flex: 1, width: '100%', justifyContent: 'flex-end', padding: Spacing.md, backgroundColor: 'rgba(0,0,0,0)' },
+  bottomRow: { flexDirection: 'row', width: '100%', alignItems: 'flex-end', backgroundColor: 'rgba(0,0,0,0)' },
+  joystickWrapper: { width: '35%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0)' },
+  buttonsWrapper: { width: '65%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', alignItems: 'center', gap: Spacing.sm, backgroundColor: 'rgba(0,0,0,0)' },
   smallButton: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: 8, backgroundColor: Colors.primary },
   smallButtonText: { color: 'white', fontSize: 12 },
   actionButton: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderRadius: 8, backgroundColor: Colors.primary },
@@ -140,6 +140,6 @@ const styles = StyleSheet.create({
   actionButtonText: { color: 'white', fontSize: 14 },
   resetButton: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderRadius: 8, backgroundColor: Colors.textSecondary },
   resetButtonText: { color: 'white', fontSize: 14 },
-  joystickBase: { backgroundColor: '#333', opacity: 0.4, justifyContent: 'center', alignItems: 'center' },
+  joystickBase: { backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' },
   joystickKnob: { backgroundColor: Colors.primary, position: 'absolute' }
 })

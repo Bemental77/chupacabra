@@ -54,7 +54,7 @@ export const MazeGameScreen: React.FC = () => {
             playerY={gameState.playerY}
             cellSize={50}
             mazeWidth={width - Spacing.md * 2}
-            mazeHeight={height * 0.6}
+            mazeHeight={height}
             onMove={handleMove}
             revealedPaths={gameState.revealedPaths}
           />

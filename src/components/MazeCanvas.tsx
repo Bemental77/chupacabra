@@ -32,8 +32,8 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
 
     if (viewportWidth === 0 || viewportHeight === 0) return
 
-    const offsetX = Math.max(Math.min(-(playerPx - viewportWidth / 2), 0), viewportWidth - mazeWidth)
-    const offsetY = Math.max(Math.min(-(playerPy - viewportHeight / 2), 0), viewportHeight - mazeHeight)
+    const offsetX = Math.min(0, Math.max(viewportWidth - mazeWidth, -(playerPx - viewportWidth )))
+    const offsetY = Math.min(0, Math.max(viewportHeight - mazeHeight, -(playerPy - viewportHeight )))
 
     Animated.timing(worldOffset, {
       toValue: { x: offsetX, y: offsetY },
@@ -97,7 +97,7 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
 }
 
 const styles = StyleSheet.create({
-  container: { position: 'relative', flex: 1, width: '100%', height: '100%' }
+  container: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }
 })
 
 export default MazeCanvas
