@@ -48,17 +48,17 @@ export const MazeGameScreen: React.FC = () => {
       </View>
 
       <View style={styles.content}>
-        <View style={{ flex: 3, width: '100%' }}>
-          <MazeCanvas
-            playerX={gameState.playerX}
-            playerY={gameState.playerY}
-            cellSize={50}
-            mazeWidth={width}
-            mazeHeight={height}
-            onMove={handleMove}
-            revealedPaths={gameState.revealedPaths}
-          />
-        </View>
+
+        <MazeCanvas
+          playerX={gameState.playerX}
+          playerY={gameState.playerY}
+          cellSize={50}
+          mazeWidth={width}
+          mazeHeight={height}
+          onMove={handleMove}
+          revealedPaths={gameState.revealedPaths}
+        />
+
 
         <View style={{ flex: 2, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
           <ControlPanel
