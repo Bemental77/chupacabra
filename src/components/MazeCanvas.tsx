@@ -21,19 +21,22 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
   const [viewportHeight, setViewportHeight] = useState(0)
 
   useEffect(() => {
-    const playerPx = playerX * cellSize
-    const playerPy = playerY * cellSize
+    const rawPx = playerX * cellSize
+    const rawPy = playerY * cellSize
+
+    const clampedPx = Math.max(0, Math.min(rawPx, mazeWidth - cellSize))
+    const clampedPy = Math.max(0, Math.min(rawPy, mazeHeight - cellSize))
 
     Animated.timing(playerAnim, {
-      toValue: { x: playerPx, y: playerPy },
+      toValue: { x: clampedPx, y: clampedPy },
       duration: 16,
       useNativeDriver: false
     }).start()
 
     if (viewportWidth === 0 || viewportHeight === 0) return
 
-    const offsetX = Math.min(0, Math.max(viewportWidth - mazeWidth, -(playerPx - viewportWidth )))
-    const offsetY = Math.min(0, Math.max(viewportHeight - mazeHeight, -(playerPy - viewportHeight )))
+    const offsetX = Math.min(0, Math.max(viewportWidth - mazeWidth, -(clampedPx - viewportWidth * 0.5)))
+    const offsetY = Math.min(0, Math.max(viewportHeight - mazeHeight, -(clampedPy - viewportHeight * 0.5)))
 
     Animated.timing(worldOffset, {
       toValue: { x: offsetX, y: offsetY },
@@ -62,12 +65,12 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
       style={styles.container}
       onLayout={onLayout}
       onStartShouldSetResponder={() => true}
-      onResponderGrant={(e) => {
+      onResponderGrant={e => {
         const { locationX, locationY } = e.nativeEvent
-        startRef.current = { x: locationX, y: locationY }
+        startRef.current = { x: viewportWidth * 0.5, y: viewportHeight * 0.5 }
         moveInterval.current = setInterval(() => handleMove(locationX, locationY), 16) as unknown as number
       }}
-      onResponderMove={(e) => {
+      onResponderMove={e => {
         const { locationX, locationY } = e.nativeEvent
         handleMove(locationX, locationY)
       }}
@@ -85,7 +88,7 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
           style={{
             width: cellSize,
             height: cellSize,
-            borderRadius: cellSize / 2,
+            borderRadius: cellSize * 0.5,
             backgroundColor: Colors.player,
             position: 'absolute',
             transform: [{ translateX: playerAnim.x }, { translateY: playerAnim.y }]

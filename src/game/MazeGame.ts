@@ -19,10 +19,11 @@ export class MazeGame {
   private playerY: number = 1
   private isPaused: boolean = false
   private revealedPaths: boolean = false
-  readonly speed: number = 5
+  readonly speed: number = 16
 
   constructor(maze: number[][]) {
     this.maze = maze
+    
   }
 
   getMaze(): number[][] {
