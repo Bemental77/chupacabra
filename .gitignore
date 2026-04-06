@@ -9,4 +9,5 @@ node_modules
 /build.gradle.kts
 /settings.gradle.kts
 /local.properties
-*.iml
+.claude
+.expo
