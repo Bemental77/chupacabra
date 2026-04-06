@@ -1,3 +1,5 @@
+import { generateMaze } from './MazeGenerator'
+
 export enum Direction {
   UP = 'UP',
   DOWN = 'DOWN',
@@ -13,9 +15,13 @@ export interface GameState {
   revealedPaths: boolean
 }
 
-const MAX_SPEED = 0.08     // units per frame (~4px/frame at cellSize 50)
-const ACCELERATION = 0.015 // how fast velocity ramps up
-const DECELERATION = 0.80  // friction when no input (multiplier)
+const MAZE_COLS = 13
+const MAZE_ROWS = 21
+const PLAYER_RADIUS = 0.4
+
+const MAX_SPEED = 0.08
+const ACCELERATION = 0.015
+const DECELERATION = 0.80
 
 export class MazeGame {
   private maze: number[][]
@@ -25,11 +31,9 @@ export class MazeGame {
   private velocityY: number = 0
   private isPaused: boolean = false
   private revealedPaths: boolean = false
-  readonly speed: number = 16
 
-  constructor(maze: number[][]) {
-    this.maze = maze
-    
+  constructor() {
+    this.maze = generateMaze(MAZE_COLS, MAZE_ROWS)
   }
 
   getMaze(): number[][] {
@@ -46,25 +50,36 @@ export class MazeGame {
     }
   }
 
+  private isWall(x: number, y: number): boolean {
+    const gx = Math.round(x)
+    const gy = Math.round(y)
+    if (gx < 0 || gy < 0 || gy >= this.maze.length || gx >= this.maze[0].length) return true
+    return this.maze[gy][gx] === 1
+  }
+
+  private collidesWithWall(x: number, y: number): boolean {
+    return (
+      this.isWall(x - PLAYER_RADIUS, y - PLAYER_RADIUS) ||
+      this.isWall(x + PLAYER_RADIUS, y - PLAYER_RADIUS) ||
+      this.isWall(x - PLAYER_RADIUS, y + PLAYER_RADIUS) ||
+      this.isWall(x + PLAYER_RADIUS, y + PLAYER_RADIUS)
+    )
+  }
+
   moveByDelta(dx: number, dy: number): GameState {
     if (this.isPaused) return this.getState()
 
     if (dx === 0 && dy === 0) {
-      // No input — decelerate
       this.velocityX *= DECELERATION
       this.velocityY *= DECELERATION
-      // Stop updating if velocity is negligible
       if (Math.abs(this.velocityX) < 0.001 && Math.abs(this.velocityY) < 0.001) {
         this.velocityX = 0
         this.velocityY = 0
         return this.getState()
       }
     } else {
-      // Accelerate toward input direction
       this.velocityX += dx * ACCELERATION
       this.velocityY += dy * ACCELERATION
-
-      // Cap at max speed
       const speed = Math.sqrt(this.velocityX ** 2 + this.velocityY ** 2)
       if (speed > MAX_SPEED) {
         this.velocityX = (this.velocityX / speed) * MAX_SPEED
@@ -72,51 +87,25 @@ export class MazeGame {
       }
     }
 
-    this.playerX += this.velocityX
-    this.playerY += this.velocityY
-    return this.getState()
-  }
+    const newX = this.playerX + this.velocityX
+    const newY = this.playerY + this.velocityY
 
-movePlayer(dx: number, dy: number): GameState {
-  if (this.isPaused) return this.getState()
+    if (!this.collidesWithWall(newX, this.playerY)) {
+      this.playerX = newX
+    } else {
+      this.velocityX = 0
+    }
 
-  const newX = this.playerX + dx
-  const newY = this.playerY + dy
-
-  this.playerX = newX
-  this.playerY = newY
-
-  return this.getState()
-}
-
-
-  jump(direction: Direction): GameState {
-    if (this.isPaused) return this.getState()
-
-    let newX = this.playerX
-    let newY = this.playerY
-
-    if (direction === Direction.UP) newY -= this.speed * 4
-    if (direction === Direction.DOWN) newY += this.speed * 4
-    if (direction === Direction.LEFT) newX -= this.speed * 4
-    if (direction === Direction.RIGHT) newX += this.speed * 4
-
-    this.playerX = newX
-    this.playerY = newY
+    if (!this.collidesWithWall(this.playerX, newY)) {
+      this.playerY = newY
+    } else {
+      this.velocityY = 0
+    }
 
     return this.getState()
   }
 
   breakWall(): GameState {
-    return this.getState()
-  }
-
-  teleport(x: number, y: number): GameState {
-    if (this.isPaused) return this.getState()
-
-    this.playerX = x
-    this.playerY = y
-
     return this.getState()
   }
 
@@ -131,11 +120,13 @@ movePlayer(dx: number, dy: number): GameState {
   }
 
   reset(): GameState {
+    this.maze = generateMaze(MAZE_COLS, MAZE_ROWS)
     this.playerX = 1
     this.playerY = 1
+    this.velocityX = 0
+    this.velocityY = 0
     this.isPaused = false
     this.revealedPaths = false
-    this.maze = this.maze.map(r => r.slice())
     return this.getState()
   }
 }

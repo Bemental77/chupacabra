@@ -1,18 +1,27 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { View, StyleSheet, Animated, Image, LayoutChangeEvent } from 'react-native'
+import { View, StyleSheet, Animated, LayoutChangeEvent } from 'react-native'
 import { Colors } from '../theme/Colors'
 
+const WALL_COLOR = '#2c3e1f'   // dense forest
+const PATH_COLOR = '#8B7355'   // dirt trail
+const EXIT_COLOR = '#4CAF50'   // green exit marker
+
 interface MazeCanvasProps {
+  maze: number[][]
   playerX: number
   playerY: number
   cellSize: number
   revealedPaths: boolean
   onMove?: (dx: number, dy: number) => void
-  mazeWidth: number
-  mazeHeight: number
 }
 
-export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSize, onMove, mazeWidth, mazeHeight }) => {
+export const MazeCanvas: React.FC<MazeCanvasProps> = ({
+  maze,
+  playerX,
+  playerY,
+  cellSize,
+  onMove
+}) => {
   const startRef = useRef<{ x: number; y: number } | null>(null)
   const moveInterval = useRef<number | null>(null)
   const playerAnim = useRef(new Animated.ValueXY({ x: playerX * cellSize, y: playerY * cellSize })).current
@@ -20,15 +29,18 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
   const [viewportWidth, setViewportWidth] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(0)
 
-  useEffect(() => {
-    const rawPx = playerX * cellSize
-    const rawPy = playerY * cellSize
+  const mazePixelWidth = maze.length > 0 ? maze[0].length * cellSize : 0
+  const mazePixelHeight = maze.length * cellSize
 
-    const clampedPx = Math.max(0, Math.min(rawPx, mazeWidth - cellSize))
-    const clampedPy = Math.max(0, Math.min(rawPy, mazeHeight - cellSize))
+  const exitRow = maze.length - 1
+  const exitCol = maze.length > 0 ? maze[0].length - 2 : 0
+
+  useEffect(() => {
+    const px = playerX * cellSize
+    const py = playerY * cellSize
 
     Animated.spring(playerAnim, {
-      toValue: { x: clampedPx, y: clampedPy },
+      toValue: { x: px, y: py },
       useNativeDriver: false,
       speed: 50,
       bounciness: 0
@@ -36,8 +48,8 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
 
     if (viewportWidth === 0 || viewportHeight === 0) return
 
-    const offsetX = Math.min(0, Math.max(viewportWidth - mazeWidth, -(clampedPx - viewportWidth * 0.5)))
-    const offsetY = Math.min(0, Math.max(viewportHeight - mazeHeight, -(clampedPy - viewportHeight * 0.5)))
+    const offsetX = Math.min(0, Math.max(viewportWidth - mazePixelWidth, -(px - viewportWidth * 0.5)))
+    const offsetY = Math.min(0, Math.max(viewportHeight - mazePixelHeight, -(py - viewportHeight * 0.5)))
 
     Animated.spring(worldOffset, {
       toValue: { x: offsetX, y: offsetY },
@@ -84,16 +96,45 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
         }
       }}
     >
-      <Animated.View style={{ width: mazeWidth, height: mazeHeight, position: 'absolute', transform: [{ translateX: worldOffset.x }, { translateY: worldOffset.y }] }}>
-        <Image source={{ uri: '/assets/map.png' }} style={{ width: mazeWidth, height: mazeHeight, position: 'absolute' }} />
+      <Animated.View
+        style={{
+          width: mazePixelWidth,
+          height: mazePixelHeight,
+          position: 'absolute',
+          transform: [{ translateX: worldOffset.x }, { translateY: worldOffset.y }]
+        }}
+      >
+        {/* Maze grid */}
+        {maze.map((row, y) => (
+          <View key={y} style={{ flexDirection: 'row' }}>
+            {row.map((cell, x) => {
+              const isExit = y === exitRow && x === exitCol
+              return (
+                <View
+                  key={x}
+                  style={{
+                    width: cellSize,
+                    height: cellSize,
+                    backgroundColor: isExit ? EXIT_COLOR : cell === 1 ? WALL_COLOR : PATH_COLOR
+                  }}
+                />
+              )
+            })}
+          </View>
+        ))}
+
+        {/* Player */}
         <Animated.View
           style={{
-            width: cellSize,
-            height: cellSize,
-            borderRadius: cellSize * 0.5,
+            width: cellSize * 0.8,
+            height: cellSize * 0.8,
+            borderRadius: cellSize * 0.4,
             backgroundColor: Colors.player,
             position: 'absolute',
-            transform: [{ translateX: playerAnim.x }, { translateY: playerAnim.y }]
+            transform: [
+              { translateX: Animated.add(playerAnim.x, new Animated.Value(cellSize * 0.1)) },
+              { translateY: Animated.add(playerAnim.y, new Animated.Value(cellSize * 0.1)) }
+            ]
           }}
         />
       </Animated.View>

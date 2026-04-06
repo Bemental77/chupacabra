@@ -1,74 +1,49 @@
 import React, { useState, useCallback } from 'react'
-import { View, StyleSheet, SafeAreaView, Text, Dimensions } from 'react-native'
-import { MazeGame, GameState } from '../game/MazeGame'
-import { MazeCanvas } from '../components/MazeCanvas'
+import { View, StyleSheet, SafeAreaView, Text } from 'react-native'
+import { WorldGame, WorldState } from '../game/WorldGame'
+import { WorldCanvas } from '../components/WorldCanvas'
 import { ControlPanel } from '../components/ControlPanel'
 import { Colors, Typography, Spacing } from '../theme/Colors'
+import { Direction } from '../game/MazeGame'
 
 export const MazeGameScreen: React.FC = () => {
-  const { width, height } = Dimensions.get('window')
-  const [game] = useState(() => new MazeGame([]))
-  const [gameState, setGameState] = useState<GameState>(game.getState())
-
-  const handleMove = useCallback((dx: number, dy: number) => {
-    setGameState(game.moveByDelta(dx, dy))
-  }, [game])
+  const [game] = useState(() => new WorldGame())
+  const [state, setState] = useState<WorldState>(game.getState())
 
   const handleMoveContinuous = useCallback((dx: number, dy: number) => {
-    setGameState(game.moveByDelta(dx, dy))
-  }, [game])
-
-  const handleJump = useCallback((dx: number, dy: number) => {
-    setGameState(game.moveByDelta(dx * 4, dy * 4))
-  }, [game])
-
-  const handleBreakWall = useCallback(() => {
-    setGameState(game.breakWall())
+    setState(game.moveByDelta(dx, dy))
   }, [game])
 
   const handleTogglePause = useCallback(() => {
-    setGameState(game.togglePause())
-  }, [game])
-
-  const handleToggleReveal = useCallback(() => {
-    setGameState(game.toggleRevealPath())
+    setState(game.togglePause())
   }, [game])
 
   const handleReset = useCallback(() => {
-    setGameState(game.reset())
+    setState(game.reset())
   }, [game])
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Chupacabra Maze</Text>
-        <Text style={styles.subtitle}>
-          Position: ({gameState.playerX}, {gameState.playerY})
-        </Text>
+        <Text style={styles.title}>Chupacabra</Text>
       </View>
 
       <View style={styles.content}>
-
-        <MazeCanvas
-          playerX={gameState.playerX}
-          playerY={gameState.playerY}
-          cellSize={50}
-          mazeWidth={width}
-          mazeHeight={height}
-          onMove={handleMove}
-          revealedPaths={gameState.revealedPaths}
+        <WorldCanvas
+          game={game}
+          playerX={state.playerX}
+          playerY={state.playerY}
         />
 
-
-        <View style={{ flex: 2, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={styles.controls}>
           <ControlPanel
             onMoveContinuous={handleMoveContinuous}
-            onJump={handleJump}
-            onBreakWall={handleBreakWall}
+            onJump={() => {}}
+            onBreakWall={(_: Direction) => {}}
             onTogglePause={handleTogglePause}
-            onToggleReveal={handleToggleReveal}
+            onToggleReveal={() => {}}
             onReset={handleReset}
-            isPaused={gameState.isPaused}
+            isPaused={state.isPaused}
           />
         </View>
       </View>
@@ -80,6 +55,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: { backgroundColor: Colors.primary, paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg },
   title: { ...Typography.title, color: 'white', fontWeight: 'bold' },
-  subtitle: { ...Typography.caption, color: 'rgba(255, 255, 255, 0.8)', marginTop: Spacing.xs, fontWeight: '400' },
-  content: { flex: 1, padding: Spacing.md, gap: Spacing.md }
+  content: { flex: 1 },
+  controls: { position: 'absolute', bottom: 0, left: 0, right: 0 },
 })
