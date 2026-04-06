@@ -27,10 +27,11 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
     const clampedPx = Math.max(0, Math.min(rawPx, mazeWidth - cellSize))
     const clampedPy = Math.max(0, Math.min(rawPy, mazeHeight - cellSize))
 
-    Animated.timing(playerAnim, {
+    Animated.spring(playerAnim, {
       toValue: { x: clampedPx, y: clampedPy },
-      duration: 16,
-      useNativeDriver: false
+      useNativeDriver: false,
+      speed: 50,
+      bounciness: 0
     }).start()
 
     if (viewportWidth === 0 || viewportHeight === 0) return
@@ -38,10 +39,11 @@ export const MazeCanvas: React.FC<MazeCanvasProps> = ({ playerX, playerY, cellSi
     const offsetX = Math.min(0, Math.max(viewportWidth - mazeWidth, -(clampedPx - viewportWidth * 0.5)))
     const offsetY = Math.min(0, Math.max(viewportHeight - mazeHeight, -(clampedPy - viewportHeight * 0.5)))
 
-    Animated.timing(worldOffset, {
+    Animated.spring(worldOffset, {
       toValue: { x: offsetX, y: offsetY },
-      duration: 16,
-      useNativeDriver: false
+      useNativeDriver: false,
+      speed: 50,
+      bounciness: 0
     }).start()
   }, [playerX, playerY, viewportWidth, viewportHeight])
 

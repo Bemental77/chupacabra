@@ -13,10 +13,16 @@ export interface GameState {
   revealedPaths: boolean
 }
 
+const MAX_SPEED = 0.08     // units per frame (~4px/frame at cellSize 50)
+const ACCELERATION = 0.015 // how fast velocity ramps up
+const DECELERATION = 0.80  // friction when no input (multiplier)
+
 export class MazeGame {
   private maze: number[][]
   private playerX: number = 1
   private playerY: number = 1
+  private velocityX: number = 0
+  private velocityY: number = 0
   private isPaused: boolean = false
   private revealedPaths: boolean = false
   readonly speed: number = 16
@@ -42,8 +48,32 @@ export class MazeGame {
 
   moveByDelta(dx: number, dy: number): GameState {
     if (this.isPaused) return this.getState()
-    this.playerX += dx
-    this.playerY += dy
+
+    if (dx === 0 && dy === 0) {
+      // No input — decelerate
+      this.velocityX *= DECELERATION
+      this.velocityY *= DECELERATION
+      // Stop updating if velocity is negligible
+      if (Math.abs(this.velocityX) < 0.001 && Math.abs(this.velocityY) < 0.001) {
+        this.velocityX = 0
+        this.velocityY = 0
+        return this.getState()
+      }
+    } else {
+      // Accelerate toward input direction
+      this.velocityX += dx * ACCELERATION
+      this.velocityY += dy * ACCELERATION
+
+      // Cap at max speed
+      const speed = Math.sqrt(this.velocityX ** 2 + this.velocityY ** 2)
+      if (speed > MAX_SPEED) {
+        this.velocityX = (this.velocityX / speed) * MAX_SPEED
+        this.velocityY = (this.velocityY / speed) * MAX_SPEED
+      }
+    }
+
+    this.playerX += this.velocityX
+    this.playerY += this.velocityY
     return this.getState()
   }
 

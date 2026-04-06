@@ -26,23 +26,20 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   const joystickSize = 120
   const knobSize = 60
   const radius = joystickSize / 2
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const lastMove = useRef({ dx: 0, dy: 0 })
+  const inputRef = useRef({ dx: 0, dy: 0 })
+  const rafRef = useRef<number | null>(null)
 
-  const startContinuousMove = (dx: number, dy: number) => {
-    lastMove.current = { dx, dy }
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    intervalRef.current = setInterval(() => onMoveContinuous(lastMove.current.dx, lastMove.current.dy), 16)
-  }
-
-  const stopContinuousMove = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    intervalRef.current = null
-    onMoveContinuous(0, 0)
-  }
+  useEffect(() => {
+    const tick = () => {
+      onMoveContinuous(inputRef.current.dx, inputRef.current.dy)
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }
+  }, [onMoveContinuous])
 
   const handleJump = () => {
-    onJump(lastMove.current.dx, lastMove.current.dy)
+    onJump(inputRef.current.dx, inputRef.current.dy)
   }
 
   const panResponder = useRef(
@@ -59,16 +56,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           ny = (dy / dist) * radius
         }
         setJoystickPos({ x: nx, y: ny })
-        startContinuousMove(nx / radius, ny / radius)
+        inputRef.current = { dx: nx / radius, dy: ny / radius }
       },
       onPanResponderRelease: () => {
         setJoystickPos({ x: 0, y: 0 })
-        stopContinuousMove()
+        inputRef.current = { dx: 0, dy: 0 }
       }
     })
   ).current
-
-  useEffect(() => stopContinuousMove, [])
 
   return (
     <View style={styles.container}>
