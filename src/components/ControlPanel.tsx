@@ -1,67 +1,55 @@
-import React, { useRef, useState, useEffect } from 'react'
-import { View, StyleSheet, TouchableOpacity, Text, ScrollView, PanResponder } from 'react-native'
-import { Colors, Spacing, Typography } from '../theme/Colors'
+import React, { useRef, useState } from 'react'
+import { View, StyleSheet, TouchableOpacity, Text, PanResponder } from 'react-native'
+import { Colors, Spacing } from '../theme/Colors'
 import { Direction } from '../game/MazeGame'
 
 interface ControlPanelProps {
+  onMoveContinuous: (dx: number, dy: number) => void
   onJump: (dx: number, dy: number) => void
   onBreakWall: (direction: Direction) => void
   onTogglePause: () => void
   onToggleReveal: () => void
   onReset: () => void
   isPaused: boolean
-  onMoveContinuous: (dx: number, dy: number) => void
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({
+  onMoveContinuous,
   onJump,
   onBreakWall,
   onTogglePause,
   onToggleReveal,
   onReset,
   isPaused,
-  onMoveContinuous
 }) => {
   const [joystickPos, setJoystickPos] = useState({ x: 0, y: 0 })
   const joystickSize = 120
   const knobSize = 60
   const radius = joystickSize / 2
-  const inputRef = useRef({ dx: 0, dy: 0 })
-  const rafRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    const tick = () => {
-      onMoveContinuous(inputRef.current.dx, inputRef.current.dy)
-      rafRef.current = requestAnimationFrame(tick)
-    }
-    rafRef.current = requestAnimationFrame(tick)
-    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }
-  }, [onMoveContinuous])
-
-  const handleJump = () => {
-    onJump(inputRef.current.dx, inputRef.current.dy)
-  }
+  const lastInputRef = useRef({ dx: 0, dy: 0 })
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gesture) => {
-        const dx = gesture.dx
-        const dy = gesture.dy
-        const dist = Math.sqrt(dx * dx + dy * dy)
-        let nx = dx
-        let ny = dy
+        const dist = Math.sqrt(gesture.dx ** 2 + gesture.dy ** 2)
+        let nx = gesture.dx
+        let ny = gesture.dy
         if (dist > radius) {
-          nx = (dx / dist) * radius
-          ny = (dy / dist) * radius
+          nx = (nx / dist) * radius
+          ny = (ny / dist) * radius
         }
         setJoystickPos({ x: nx, y: ny })
-        inputRef.current = { dx: nx / radius, dy: ny / radius }
+        const ndx = nx / radius
+        const ndy = ny / radius
+        lastInputRef.current = { dx: ndx, dy: ndy }
+        onMoveContinuous(ndx, ndy)
       },
       onPanResponderRelease: () => {
         setJoystickPos({ x: 0, y: 0 })
-        inputRef.current = { dx: 0, dy: 0 }
-      }
+        lastInputRef.current = { dx: 0, dy: 0 }
+        onMoveContinuous(0, 0)
+      },
     })
   ).current
 
@@ -78,42 +66,17 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   width: knobSize,
                   height: knobSize,
                   borderRadius: knobSize / 2,
-                  transform: [{ translateX: joystickPos.x }, { translateY: joystickPos.y }]
-                }
+                  transform: [{ translateX: joystickPos.x }, { translateY: joystickPos.y }],
+                },
               ]}
             />
           </View>
         </View>
 
         <View style={styles.buttonsWrapper}>
-          <TouchableOpacity style={styles.smallButton} onPress={handleJump}>
-            <Text style={styles.smallButtonText}>Jump</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.smallButton} onPress={() => onBreakWall(Direction.UP)}>
-            <Text style={styles.smallButtonText}>Break ↑</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.smallButton} onPress={() => onBreakWall(Direction.DOWN)}>
-            <Text style={styles.smallButtonText}>Break ↓</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.smallButton} onPress={() => onBreakWall(Direction.LEFT)}>
-            <Text style={styles.smallButtonText}>Break ←</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.smallButton} onPress={() => onBreakWall(Direction.RIGHT)}>
-            <Text style={styles.smallButtonText}>Break →</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={[styles.actionButton, isPaused && styles.pausedButton]} onPress={onTogglePause}>
             <Text style={styles.actionButtonText}>{isPaused ? 'Resume' : 'Pause'}</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={onToggleReveal}>
-            <Text style={styles.actionButtonText}>Reveal Path</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.resetButton} onPress={onReset}>
             <Text style={styles.resetButtonText}>Reset</Text>
           </TouchableOpacity>
@@ -124,17 +87,15 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, width: '100%', justifyContent: 'flex-end', padding: Spacing.md, backgroundColor: 'rgba(0,0,0,0)' },
-  bottomRow: { flexDirection: 'row', width: '100%', alignItems: 'flex-end', backgroundColor: 'rgba(0,0,0,0)' },
-  joystickWrapper: { width: '35%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0)' },
-  buttonsWrapper: { width: '65%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', alignItems: 'center', gap: Spacing.sm, backgroundColor: 'rgba(0,0,0,0)' },
-  smallButton: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: 8, backgroundColor: Colors.primary },
-  smallButtonText: { color: 'white', fontSize: 12 },
-  actionButton: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderRadius: 8, backgroundColor: Colors.primary },
+  container: { width: '100%', justifyContent: 'flex-end', padding: 12 },
+  bottomRow: { flexDirection: 'row', width: '100%', alignItems: 'flex-end' },
+  joystickWrapper: { width: '40%', justifyContent: 'center', alignItems: 'center' },
+  buttonsWrapper: { width: '60%', flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+  actionButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, backgroundColor: Colors.primary },
   pausedButton: { backgroundColor: '#FF9500' },
   actionButtonText: { color: 'white', fontSize: 14 },
-  resetButton: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderRadius: 8, backgroundColor: Colors.textSecondary },
+  resetButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, backgroundColor: Colors.textSecondary },
   resetButtonText: { color: 'white', fontSize: 14 },
   joystickBase: { backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' },
-  joystickKnob: { backgroundColor: Colors.primary, position: 'absolute' }
+  joystickKnob: { backgroundColor: Colors.primary, position: 'absolute' },
 })

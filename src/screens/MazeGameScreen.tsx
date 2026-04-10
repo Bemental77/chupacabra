@@ -1,40 +1,38 @@
-import React, { useState, useCallback } from 'react'
-import { View, StyleSheet, SafeAreaView, Text } from 'react-native'
-import { WorldGame, WorldState } from '../game/WorldGame'
+import React, { useState, useCallback, useRef } from 'react'
+import { View, StyleSheet, SafeAreaView } from 'react-native'
+import { WorldGame } from '../game/WorldGame'
 import { WorldCanvas } from '../components/WorldCanvas'
 import { ControlPanel } from '../components/ControlPanel'
-import { Colors, Typography, Spacing } from '../theme/Colors'
+import { Colors } from '../theme/Colors'
 import { Direction } from '../game/MazeGame'
 
 export const MazeGameScreen: React.FC = () => {
-  const [game] = useState(() => new WorldGame())
-  const [state, setState] = useState<WorldState>(game.getState())
+  const gameRef = useRef(new WorldGame())
+  const inputRef = useRef({ dx: 0, dy: 0 })
+  const [isPaused, setIsPaused] = useState(false)
 
   const handleMoveContinuous = useCallback((dx: number, dy: number) => {
-    setState(game.moveByDelta(dx, dy))
-  }, [game])
+    inputRef.current = { dx, dy }
+  }, [])
 
   const handleTogglePause = useCallback(() => {
-    setState(game.togglePause())
-  }, [game])
+    const state = gameRef.current.togglePause()
+    setIsPaused(state.isPaused)
+  }, [])
 
   const handleReset = useCallback(() => {
-    setState(game.reset())
-  }, [game])
+    const state = gameRef.current.reset()
+    setIsPaused(state.isPaused)
+  }, [])
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Chupacabra</Text>
-      </View>
-
       <View style={styles.content}>
         <WorldCanvas
-          game={game}
-          playerX={state.playerX}
-          playerY={state.playerY}
+          game={gameRef.current}
+          inputRef={inputRef}
+          onViewportSize={() => {}}
         />
-
         <View style={styles.controls}>
           <ControlPanel
             onMoveContinuous={handleMoveContinuous}
@@ -43,7 +41,7 @@ export const MazeGameScreen: React.FC = () => {
             onTogglePause={handleTogglePause}
             onToggleReveal={() => {}}
             onReset={handleReset}
-            isPaused={state.isPaused}
+            isPaused={isPaused}
           />
         </View>
       </View>
@@ -53,8 +51,6 @@ export const MazeGameScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { backgroundColor: Colors.primary, paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg },
-  title: { ...Typography.title, color: 'white', fontWeight: 'bold' },
   content: { flex: 1 },
   controls: { position: 'absolute', bottom: 0, left: 0, right: 0 },
 })
