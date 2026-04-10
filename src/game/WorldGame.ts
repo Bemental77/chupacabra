@@ -14,7 +14,7 @@ interface Circle { x: number; y: number; r: number }
 
 export const WORLD_WIDTH = 10000
 export const WORLD_HEIGHT = 5000
-export const PLAYER_START = { x: 5000, y: 2500 }
+export const PLAYER_START = { x: 5150, y: 2700 }
 
 const GATE = 70
 const WALL = 25
