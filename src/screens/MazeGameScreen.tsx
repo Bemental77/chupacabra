@@ -3,6 +3,7 @@ import { View, StyleSheet, SafeAreaView } from 'react-native'
 import { WorldGame } from '../game/WorldGame'
 import { WorldCanvas } from '../components/WorldCanvas'
 import { ControlPanel } from '../components/ControlPanel'
+import { MapOverlay } from '../components/MapOverlay'
 import { Colors } from '../theme/Colors'
 import { Direction } from '../game/MazeGame'
 
@@ -10,6 +11,7 @@ export const MazeGameScreen: React.FC = () => {
   const gameRef = useRef(new WorldGame())
   const inputRef = useRef({ dx: 0, dy: 0 })
   const [isPaused, setIsPaused] = useState(false)
+  const [mapVisible, setMapVisible] = useState(false)
 
   const handleMoveContinuous = useCallback((dx: number, dy: number) => {
     inputRef.current = { dx, dy }
@@ -41,9 +43,15 @@ export const MazeGameScreen: React.FC = () => {
             onTogglePause={handleTogglePause}
             onToggleReveal={() => {}}
             onReset={handleReset}
+            onMap={() => setMapVisible(true)}
             isPaused={isPaused}
           />
         </View>
+        <MapOverlay
+          visible={mapVisible}
+          onClose={() => setMapVisible(false)}
+          game={gameRef.current}
+        />
       </View>
     </SafeAreaView>
   )

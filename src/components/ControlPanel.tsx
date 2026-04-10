@@ -10,6 +10,7 @@ interface ControlPanelProps {
   onTogglePause: () => void
   onToggleReveal: () => void
   onReset: () => void
+  onMap: () => void
   isPaused: boolean
 }
 
@@ -20,6 +21,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onTogglePause,
   onToggleReveal,
   onReset,
+  onMap,
   isPaused,
 }) => {
   const [joystickPos, setJoystickPos] = useState({ x: 0, y: 0 })
@@ -80,6 +82,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           <TouchableOpacity style={styles.resetButton} onPress={onReset}>
             <Text style={styles.resetButtonText}>Reset</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.mapButton} onPress={onMap}>
+            <Text style={styles.mapButtonText}>Map</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -96,6 +101,8 @@ const styles = StyleSheet.create({
   actionButtonText: { color: 'white', fontSize: 14 },
   resetButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, backgroundColor: Colors.textSecondary },
   resetButtonText: { color: 'white', fontSize: 14 },
+  mapButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, backgroundColor: '#2c5f8a' },
+  mapButtonText: { color: 'white', fontSize: 14 },
   joystickBase: { backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' },
   joystickKnob: { backgroundColor: Colors.primary, position: 'absolute' },
 })
