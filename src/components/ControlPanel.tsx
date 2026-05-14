@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import { View, StyleSheet, TouchableOpacity, Text, PanResponder } from 'react-native'
 import { Colors, Spacing } from '../theme/Colors'
 import { Direction } from '../game/MazeGame'
+import { regenerateWorld } from '../game/WorldGame'
 
 interface ControlPanelProps {
   onMoveContinuous: (dx: number, dy: number) => void
@@ -85,6 +86,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           <TouchableOpacity style={styles.mapButton} onPress={onMap}>
             <Text style={styles.mapButtonText}>Map</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.newWorldButton} onPress={regenerateWorld}>
+            <Text style={styles.newWorldText}>New World</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -103,6 +107,8 @@ const styles = StyleSheet.create({
   resetButtonText: { color: 'white', fontSize: 14 },
   mapButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, backgroundColor: '#2c5f8a' },
   mapButtonText: { color: 'white', fontSize: 14 },
+  newWorldButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, backgroundColor: '#5b8a3a' },
+  newWorldText: { color: 'white', fontSize: 14 },
   joystickBase: { backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' },
   joystickKnob: { backgroundColor: Colors.primary, position: 'absolute' },
 })

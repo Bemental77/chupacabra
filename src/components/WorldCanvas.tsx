@@ -1,5 +1,16 @@
-import React, { useRef, useEffect, useState } from 'react'
-import { View, Animated, LayoutChangeEvent } from 'react-native'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { View, LayoutChangeEvent, StyleSheet } from 'react-native'
+import {
+  Canvas,
+  Group,
+  Picture,
+  Path,
+  Rect,
+  RadialGradient,
+  Skia,
+  vec,
+  createPicture,
+} from '@shopify/react-native-skia'
 import {
   WorldGame,
   WORLD_WIDTH,
@@ -10,247 +21,409 @@ import {
   ALL_BUILDINGS,
   FIELD_TREES,
   FIELD_ROCKS,
+  TERRAIN_POLYGONS,
+  RESOURCE_NODES,
+  MAIN_ROADS,
+  NPCS,
 } from '../game/WorldGame'
 
-const GRASS           = '#5a8c3c'
-const DIRT_ROAD       = '#b5904a'
-const TOWN_GROUND     = '#c9b07a'
-const WALL_COLOR      = '#7a6a50'
-const BUILDING_COLORS = ['#8B7355', '#9e8060', '#a08866', '#7a6545']
-const TREE_COLOR      = '#2d5a1b'
-const TREE_TRUNK      = '#5c3d1e'
-const ROCK_COLOR      = '#8a8070'
-const ROCK_SHADOW     = '#6a6258'
-const PLAYER_COLOR    = '#e63946'
+// Don't-Starve-ish gameplay palette
+const GRASS_BASE     = '#6e7d3f'  // olive grass — base ground color
+const GRASS_PATCH    = '#5d6b34'  // darker patches of grass for variation
+const DIRT_PATH      = '#a08660'  // tan dirt roads / clearings
+const ROCK_DARK      = '#4f4d48'  // rocky impassable terrain (was brown forest)
+const ROCK_SHADE     = '#37352f'  // shadow / inner crater
+const ROCK_HILITE    = '#6e6a62'  // top edge highlight on rocky terrain
+const TOWN_GROUND_C  = '#c9b07a'  // sandy town ground (man-made clearing)
+const WALL_COLOR     = '#3d2e20'
+const BUILDING_COLOR = '#5a4530'
+const BUILDING_OUT   = '#2a1f15'
+const TREE_CANOPY    = '#2a4218'  // dark forest green
+const TREE_HILITE    = '#3d5a25'  // lighter canopy highlight
+const TREE_SHADOW    = '#1a280f'  // tree drop-shadow
+const ROCK_FILL      = '#7a7268'  // individual decorative rocks
+const ROCK_SHAD      = '#4a4540'
+const ROCK_LIGHT     = '#9c948a'
+const PLAYER_FILL    = '#f4e8c8'
+const PLAYER_OUTLINE = '#2a1f15'
 
-const TRAIL_W = 45
-const CULL_MARGIN = 300
-
-const MAIN_ROADS = [
-  { x: 0,    y: 600,  w: 10000, h: 80  },
-  { x: 0,    y: 2300, w: 10000, h: 100 },
-  { x: 0,    y: 3900, w: 10000, h: 80  },
-  { x: 4960, y: 0,    w: 80,    h: 5000 },
-  { x: 760,  y: 0,    w: 60,    h: 5000 },
-  { x: 9160, y: 0,    w: 60,    h: 5000 },
+// Resource icon palette — 7 types, rendered with shape variation per type
+const RESOURCE_COLORS = [
+  '#c84236', // 0: berries (red)
+  '#7d5230', // 1: twigs (brown)
+  '#d9c478', // 2: straw (yellow)
+  '#e8e3d2', // 3: flowers (white)
+  '#9d7ec0', // 4: mushrooms (purple)
+  '#4a8c2a', // 5: wood (green)
+  '#9c948a', // 6: stone (gray)
 ]
+const RESOURCE_DARK = '#1d1612'
 
-const TRAILS = [
-  // NW area (original)
-  { cx: 1300, cy: 580,  len: 160, angle: -8  },
-  { cx: 1270, cy: 430,  len: 160, angle: -18 },
-  { cx: 1220, cy: 285,  len: 160, angle: -12 },
-  { cx: 1180, cy: 140,  len: 140, angle: -6  },
-  { cx: 1750, cy: 820,  len: 160, angle: 22  },
-  { cx: 1820, cy: 965,  len: 160, angle: 16  },
-  { cx: 1870, cy: 1110, len: 160, angle: 28  },
-  { cx: 1930, cy: 1255, len: 140, angle: 20  },
-  { cx: 960,  cy: 610,  len: 160, angle: -42 },
-  { cx: 870,  cy: 490,  len: 150, angle: -50 },
-  { cx: 770,  cy: 370,  len: 140, angle: -44 },
-  { cx: 2050, cy: 600,  len: 160, angle: -28 },
-  { cx: 2140, cy: 470,  len: 160, angle: -22 },
-  { cx: 2240, cy: 355,  len: 140, angle: -30 },
-  { cx: 1200, cy: 1050, len: 160, angle: 15  },
-  { cx: 1340, cy: 1120, len: 160, angle: 5   },
-  { cx: 1490, cy: 1150, len: 160, angle: -5  },
-  // Central area
-  { cx: 3000, cy: 1400, len: 160, angle: 30  },
-  { cx: 3200, cy: 1500, len: 140, angle: 20  },
-  { cx: 3400, cy: 1380, len: 160, angle: -15 },
-  { cx: 4000, cy: 1200, len: 150, angle: -25 },
-  { cx: 4200, cy: 1100, len: 160, angle: -10 },
-  { cx: 5700, cy: 1200, len: 160, angle: 20  },
-  { cx: 5900, cy: 1300, len: 140, angle: 15  },
-  { cx: 4800, cy: 2400, len: 160, angle: -30 },
-  { cx: 5000, cy: 2280, len: 150, angle: -20 },
-  { cx: 5200, cy: 2400, len: 160, angle: 25  },
-  // Eastern area
-  { cx: 6500, cy: 600,  len: 160, angle: -20 },
-  { cx: 6700, cy: 480,  len: 150, angle: -30 },
-  { cx: 7500, cy: 550,  len: 160, angle: 18  },
-  { cx: 7700, cy: 680,  len: 140, angle: 25  },
-  { cx: 8600, cy: 620,  len: 160, angle: -12 },
-  { cx: 8800, cy: 480,  len: 150, angle: -20 },
-  { cx: 9000, cy: 1200, len: 160, angle: 35  },
-  { cx: 9100, cy: 1100, len: 140, angle: 28  },
-  // SW area
-  { cx: 350,  cy: 1800, len: 150, angle: 20  },
-  { cx: 500,  cy: 2000, len: 160, angle: -15 },
-  { cx: 650,  cy: 2300, len: 140, angle: 30  },
-  { cx: 800,  cy: 2500, len: 160, angle: -25 },
-  { cx: 400,  cy: 2800, len: 150, angle: 18  },
-  { cx: 600,  cy: 3000, len: 160, angle: -22 },
-  { cx: 350,  cy: 3300, len: 140, angle: 15  },
-  { cx: 600,  cy: 3600, len: 160, angle: -30 },
-  // Southern area
-  { cx: 2500, cy: 3950, len: 160, angle: 20  },
-  { cx: 2800, cy: 4100, len: 150, angle: -15 },
-  { cx: 4800, cy: 4000, len: 160, angle: 25  },
-  { cx: 5200, cy: 4000, len: 140, angle: -20 },
-  { cx: 7200, cy: 3950, len: 160, angle: 18  },
-  { cx: 7500, cy: 4100, len: 150, angle: -12 },
-  // SE area
-  { cx: 8600, cy: 3000, len: 160, angle: 22  },
-  { cx: 8800, cy: 3200, len: 140, angle: -18 },
-  { cx: 9100, cy: 2800, len: 160, angle: 30  },
-  { cx: 9300, cy: 3500, len: 150, angle: -25 },
-]
+// Camera zoom: 1 world unit = SCALE screen pixels. Lower = more zoomed out.
+const SCALE = 0.28
+
+// Chevron player path (points along +x, will rotate to velocity angle).
+// Sized in screen pixels — drawn inside a group that undoes the world scale.
+const CHEVRON_PATH = Skia.Path.MakeFromSVGString(
+  'M 18 0 L -12 -12 L -4 0 L -12 12 Z'
+)!
 
 interface WorldCanvasProps {
   game: WorldGame
   inputRef: React.MutableRefObject<{ dx: number; dy: number }>
-  onViewportSize: (w: number, h: number) => void
+  onViewportSize?: (w: number, h: number) => void
 }
 
 export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onViewportSize }) => {
-  const playerAnim    = useRef(new Animated.ValueXY({ x: PLAYER_START.x, y: PLAYER_START.y })).current
-  const playerOffsetX = useRef(new Animated.Value(-12)).current
-  const playerOffsetY = useRef(new Animated.Value(-12)).current
-  const worldOffset   = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current
-  const viewportRef   = useRef({ w: 0, h: 0 })
-  const lastTimeRef   = useRef<number | null>(null)
+  const [viewport, setViewport] = useState({ w: 0, h: 0 })
+  // Tick state forces a re-render each frame; the actual values live in refs.
+  const [, setTick] = useState(0)
 
-  // Throttled camera region for viewport culling
-  const lastCullRef = useRef({ ox: -(PLAYER_START.x - 500), oy: -(PLAYER_START.y - 400) })
-  const [cullReg, setCullReg] = useState(lastCullRef.current)
+  const playerRef = useRef({
+    x: PLAYER_START.x,
+    y: PLAYER_START.y,
+    angle: 0,
+  })
+  const lastAngleRef = useRef(0)
+  const lastTimeRef = useRef<number | null>(null)
 
   useEffect(() => {
-    let rafId: number
-    const tick = (time: number) => {
+    let rafId = 0
+    const loop = (time: number) => {
       const delta = lastTimeRef.current !== null
         ? Math.min((time - lastTimeRef.current) / 16.667, 3)
         : 1
       lastTimeRef.current = time
 
       const state = game.moveByDelta(inputRef.current.dx, inputRef.current.dy, delta)
-      playerAnim.setValue({ x: state.playerX, y: state.playerY })
 
-      const { w, h } = viewportRef.current
-      if (w > 0 && h > 0) {
-        const ox = Math.min(0, Math.max(w - WORLD_WIDTH,  -(state.playerX - w / 2)))
-        const oy = Math.min(0, Math.max(h - WORLD_HEIGHT, -(state.playerY - h / 2)))
-        worldOffset.setValue({ x: ox, y: oy })
-
-        // Update cull region only when camera moves enough to avoid per-frame re-renders
-        if (
-          Math.abs(ox - lastCullRef.current.ox) > 150 ||
-          Math.abs(oy - lastCullRef.current.oy) > 150
-        ) {
-          lastCullRef.current = { ox, oy }
-          setCullReg({ ox, oy })
-        }
+      // Lock rotation to velocity direction; freeze on stop.
+      if (Math.abs(state.velocityX) > 0.08 || Math.abs(state.velocityY) > 0.08) {
+        lastAngleRef.current = Math.atan2(state.velocityY, state.velocityX)
       }
 
-      rafId = requestAnimationFrame(tick)
+      playerRef.current = {
+        x: state.playerX,
+        y: state.playerY,
+        angle: lastAngleRef.current,
+      }
+      setTick((t) => (t + 1) & 0xffff)
+      rafId = requestAnimationFrame(loop)
     }
-    rafId = requestAnimationFrame(tick)
+    rafId = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(rafId)
-  }, [game, inputRef, playerAnim, worldOffset])
+  }, [game, inputRef])
+
+  // Pre-record the static world once. Heavy work, runs on first render only.
+  const staticPicture = useMemo(
+    () =>
+      createPicture((canvas) => {
+        const paint = Skia.Paint()
+
+        // 1. Grass base + darker grass patches for variation
+        paint.setColor(Skia.Color(GRASS_BASE))
+        canvas.drawRect({ x: 0, y: 0, width: WORLD_WIDTH, height: WORLD_HEIGHT }, paint)
+        paint.setColor(Skia.Color(GRASS_PATCH))
+        // Deterministic scatter of ~80 large soft patches across the world
+        let prng = 0x13579bdf
+        const nextRand = () => {
+          prng = (prng * 1103515245 + 12345) & 0x7fffffff
+          return prng / 0x7fffffff
+        }
+        for (let i = 0; i < 80; i++) {
+          const x = nextRand() * WORLD_WIDTH
+          const y = nextRand() * WORLD_HEIGHT
+          const r = 120 + nextRand() * 180
+          canvas.drawCircle(x, y, r, paint)
+        }
+
+        // 2. Dirt roads — stroked polylines (each Road is a smooth curve between towns)
+        const roadPaint = Skia.Paint()
+        roadPaint.setColor(Skia.Color(DIRT_PATH))
+        roadPaint.setStyle(1)
+        roadPaint.setStrokeJoin(1) // round
+        roadPaint.setStrokeCap(1)  // round
+        for (const road of MAIN_ROADS) {
+          if (road.points.length < 2) continue
+          roadPaint.setStrokeWidth(road.width)
+          const p = Skia.Path.Make()
+          p.moveTo(road.points[0].x, road.points[0].y)
+          for (let i = 1; i < road.points.length; i++) {
+            p.lineTo(road.points[i].x, road.points[i].y)
+          }
+          canvas.drawPath(p, roadPaint)
+        }
+
+        // 3. Town grounds — sandy clearings inside town walls
+        paint.setColor(Skia.Color(TOWN_GROUND_C))
+        for (const g of TOWN_GROUNDS) {
+          canvas.drawRect({ x: g.x, y: g.y, width: g.w, height: g.h }, paint)
+        }
+
+        // 4. Rocky impassable terrain — marching-squares polygons.
+        //    Layered: shadow underlay (offset darker) + main fill + thin highlight stroke
+        //    to give the rocky regions some sculpted depth.
+        const terrainPath = Skia.Path.Make()
+        for (const poly of TERRAIN_POLYGONS) {
+          terrainPath.moveTo(poly[0], poly[1])
+          for (let i = 2; i < poly.length; i += 2) {
+            terrainPath.lineTo(poly[i], poly[i + 1])
+          }
+          terrainPath.close()
+        }
+
+        // 4a. shadow underlay (small offset so the visible edge sits very close
+        //     to the collision boundary)
+        canvas.save()
+        canvas.translate(2, 3)
+        paint.setColor(Skia.Color(ROCK_SHADE))
+        canvas.drawPath(terrainPath, paint)
+        canvas.restore()
+
+        // 4b. main rock fill — collision edge is here
+        paint.setColor(Skia.Color(ROCK_DARK))
+        canvas.drawPath(terrainPath, paint)
+
+        // 4c. thin lighter rim along the top to suggest depth
+        const rockRim = Skia.Paint()
+        rockRim.setColor(Skia.Color(ROCK_HILITE))
+        rockRim.setStyle(1)
+        rockRim.setStrokeWidth(2)
+        canvas.drawPath(terrainPath, rockRim)
+
+        // 5. Town walls
+        paint.setColor(Skia.Color(WALL_COLOR))
+        for (const w of ALL_WALLS) {
+          canvas.drawRect({ x: w.x, y: w.y, width: w.w, height: w.h }, paint)
+        }
+
+        // 6. Buildings (fill + dark outline with hand-drawn wobble)
+        const wobble = Skia.PathEffect.MakeDiscrete(6, 1.6, 0)
+        const outlinePaint = Skia.Paint()
+        outlinePaint.setColor(Skia.Color(BUILDING_OUT))
+        outlinePaint.setStyle(1)
+        outlinePaint.setStrokeWidth(4)
+        outlinePaint.setPathEffect(wobble)
+        paint.setColor(Skia.Color(BUILDING_COLOR))
+        for (const b of ALL_BUILDINGS) {
+          canvas.drawRect({ x: b.x, y: b.y, width: b.w, height: b.h }, paint)
+          canvas.drawRect({ x: b.x, y: b.y, width: b.w, height: b.h }, outlinePaint)
+        }
+
+        // 7. Trees — drop shadow + canopy + offset highlight (Don't Starve style)
+        const treeShadowPaint = Skia.Paint()
+        treeShadowPaint.setColor(Skia.Color(TREE_SHADOW))
+        const treeCanopyPaint = Skia.Paint()
+        treeCanopyPaint.setColor(Skia.Color(TREE_CANOPY))
+        const treeHiPaint = Skia.Paint()
+        treeHiPaint.setColor(Skia.Color(TREE_HILITE))
+        for (const t of FIELD_TREES) {
+          canvas.drawCircle(t.x + 5, t.y + 7, t.r, treeShadowPaint)
+          canvas.drawCircle(t.x, t.y, t.r, treeCanopyPaint)
+          canvas.drawCircle(t.x - t.r * 0.25, t.y - t.r * 0.3, t.r * 0.45, treeHiPaint)
+        }
+
+        // 8. Rocks (individual scattered) — shadow + main + highlight
+        const rockShadowPaint = Skia.Paint()
+        rockShadowPaint.setColor(Skia.Color(ROCK_SHAD))
+        const rockFillPaint = Skia.Paint()
+        rockFillPaint.setColor(Skia.Color(ROCK_FILL))
+        const rockHiPaint = Skia.Paint()
+        rockHiPaint.setColor(Skia.Color(ROCK_LIGHT))
+        for (const r of FIELD_ROCKS) {
+          canvas.drawCircle(r.x + 3, r.y + 4, r.r * 0.95, rockShadowPaint)
+          canvas.drawCircle(r.x, r.y, r.r * 0.9, rockFillPaint)
+          canvas.drawCircle(r.x - r.r * 0.25, r.y - r.r * 0.3, r.r * 0.35, rockHiPaint)
+        }
+
+        // 9. Resource nodes — every node rendered (no thinning), each as a
+        //    type-specific shape sized to read at SCALE=0.28.
+        const resourcePaints = RESOURCE_COLORS.map((c) => {
+          const p = Skia.Paint()
+          p.setColor(Skia.Color(c))
+          return p
+        })
+        const resourceDarkPaint = Skia.Paint()
+        resourceDarkPaint.setColor(Skia.Color(RESOURCE_DARK))
+        resourceDarkPaint.setStyle(1)
+        resourceDarkPaint.setStrokeWidth(3)
+        const twigStroke = Skia.Paint()
+        twigStroke.setColor(Skia.Color('#5a3a20'))
+        twigStroke.setStyle(1)
+        twigStroke.setStrokeWidth(5)
+        const strawStroke = Skia.Paint()
+        strawStroke.setColor(Skia.Color('#a08442'))
+        strawStroke.setStyle(1)
+        strawStroke.setStrokeWidth(4)
+        const stemPaint = Skia.Paint()
+        stemPaint.setColor(Skia.Color('#d9c89e'))
+        const woodTrunkPaint = Skia.Paint()
+        woodTrunkPaint.setColor(Skia.Color('#5a3a20'))
+        for (const n of RESOURCE_NODES) {
+          const fill = resourcePaints[n.type]
+          switch (n.type) {
+            case 0: {
+              // Berries: 3-circle cluster
+              canvas.drawCircle(n.x - 11, n.y + 4, 9, fill)
+              canvas.drawCircle(n.x + 9,  n.y + 2, 9, fill)
+              canvas.drawCircle(n.x,      n.y - 9, 9, fill)
+              break
+            }
+            case 1: {
+              // Twigs: two crossed strokes
+              const p = Skia.Path.Make()
+              p.moveTo(n.x - 14, n.y - 7); p.lineTo(n.x + 14, n.y + 7)
+              p.moveTo(n.x + 14, n.y - 10); p.lineTo(n.x - 12, n.y + 12)
+              canvas.drawPath(p, twigStroke)
+              break
+            }
+            case 2: {
+              // Straw / grass tufts
+              const p = Skia.Path.Make()
+              p.moveTo(n.x - 11, n.y + 9); p.lineTo(n.x - 9, n.y - 12)
+              p.moveTo(n.x,      n.y + 9); p.lineTo(n.x,     n.y - 14)
+              p.moveTo(n.x + 11, n.y + 9); p.lineTo(n.x + 9, n.y - 11)
+              canvas.drawPath(p, strawStroke)
+              break
+            }
+            case 3: {
+              // Flower: 4 petals + dark center
+              canvas.drawCircle(n.x - 9, n.y, 7, fill)
+              canvas.drawCircle(n.x + 9, n.y, 7, fill)
+              canvas.drawCircle(n.x, n.y - 9, 7, fill)
+              canvas.drawCircle(n.x, n.y + 9, 7, fill)
+              canvas.drawCircle(n.x, n.y, 5, resourceDarkPaint)
+              break
+            }
+            case 4: {
+              // Mushroom: cap + stem
+              canvas.drawRect({ x: n.x - 5, y: n.y + 2, width: 10, height: 14 }, stemPaint)
+              canvas.drawCircle(n.x, n.y, 14, fill)
+              canvas.drawCircle(n.x - 5, n.y - 2, 3, resourceDarkPaint)
+              canvas.drawCircle(n.x + 5, n.y, 2.5, resourceDarkPaint)
+              break
+            }
+            case 5: {
+              // Wood: a short log silhouette
+              const trunk = Skia.Path.Make()
+              trunk.moveTo(n.x - 14, n.y - 4); trunk.lineTo(n.x + 14, n.y - 4)
+              trunk.lineTo(n.x + 14, n.y + 6); trunk.lineTo(n.x - 14, n.y + 6); trunk.close()
+              canvas.drawPath(trunk, woodTrunkPaint)
+              canvas.drawCircle(n.x - 14, n.y + 1, 5, fill)
+              canvas.drawCircle(n.x + 14, n.y + 1, 5, fill)
+              canvas.drawCircle(n.x - 14, n.y + 1, 2, resourceDarkPaint)
+              canvas.drawCircle(n.x + 14, n.y + 1, 2, resourceDarkPaint)
+              break
+            }
+            case 6: {
+              // Stone: angular 3-stone cluster
+              canvas.drawCircle(n.x - 8, n.y + 3, 9, fill)
+              canvas.drawCircle(n.x + 9, n.y + 1, 10, fill)
+              canvas.drawCircle(n.x - 1, n.y - 9, 8, fill)
+              // small dark pits
+              canvas.drawCircle(n.x - 6, n.y + 4, 2, resourceDarkPaint)
+              canvas.drawCircle(n.x + 8, n.y + 2, 2.5, resourceDarkPaint)
+              break
+            }
+          }
+        }
+
+        // 10. NPCs (blacksmiths) — anvil silhouette with a warm forge glow
+        const anvilDark = Skia.Paint()
+        anvilDark.setColor(Skia.Color('#2a2520'))
+        const anvilMid = Skia.Paint()
+        anvilMid.setColor(Skia.Color('#4d463d'))
+        const forgeGlow = Skia.Paint()
+        forgeGlow.setColor(Skia.Color('#e8782a'))
+        const npcShadow = Skia.Paint()
+        npcShadow.setColor(Skia.Color('#1a140e'))
+        for (const npc of NPCS) {
+          if (npc.type !== 'blacksmith') continue
+          // soft ground shadow
+          canvas.drawCircle(npc.x + 2, npc.y + 18, 18, npcShadow)
+          // anvil base
+          canvas.drawRect({ x: npc.x - 14, y: npc.y + 6, width: 28, height: 8 }, anvilDark)
+          // anvil body (waisted)
+          canvas.drawRect({ x: npc.x - 6, y: npc.y - 4, width: 12, height: 10 }, anvilDark)
+          // anvil top (the face)
+          canvas.drawRect({ x: npc.x - 18, y: npc.y - 12, width: 36, height: 8 }, anvilMid)
+          // pointy horn
+          const horn = Skia.Path.Make()
+          horn.moveTo(npc.x - 18, npc.y - 12)
+          horn.lineTo(npc.x - 28, npc.y - 6)
+          horn.lineTo(npc.x - 18, npc.y - 4)
+          horn.close()
+          canvas.drawPath(horn, anvilMid)
+          // forge glow under the anvil
+          canvas.drawCircle(npc.x, npc.y + 16, 6, forgeGlow)
+        }
+      }),
+    []
+  )
 
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout
-    viewportRef.current = { w: width, h: height }
-    onViewportSize(width, height)
+    setViewport({ w: width, h: height })
+    onViewportSize?.(width, height)
   }
 
-  // Compute visible world bounds for culling
-  const { w: vw, h: vh } = viewportRef.current
-  const minX = -cullReg.ox - CULL_MARGIN
-  const maxX = -cullReg.ox + (vw || 500) + CULL_MARGIN
-  const minY = -cullReg.oy - CULL_MARGIN
-  const maxY = -cullReg.oy + (vh || 900) + CULL_MARGIN
+  const { w: vw, h: vh } = viewport
+  const { x: px, y: py, angle } = playerRef.current
 
-  const rectVisible = (x: number, y: number, w: number, h: number) =>
-    x + w > minX && x < maxX && y + h > minY && y < maxY
-
-  const circleVisible = (x: number, y: number, r: number) =>
-    x + r > minX && x - r < maxX && y + r > minY && y - r < maxY
-
-  const trailVisible = (cx: number, cy: number, len: number) =>
-    cx > minX - len && cx < maxX + len && cy > minY - len && cy < maxY + len
+  // Camera centers on player, clamped so we don't show beyond world edges.
+  const worldScreenW = WORLD_WIDTH * SCALE
+  const worldScreenH = WORLD_HEIGHT * SCALE
+  const ox = vw > 0
+    ? Math.min(0, Math.max(vw - worldScreenW, -(px * SCALE - vw / 2)))
+    : 0
+  const oy = vh > 0
+    ? Math.min(0, Math.max(vh - worldScreenH, -(py * SCALE - vh / 2)))
+    : 0
 
   return (
-    <View style={{ flex: 1, overflow: 'hidden', position: 'relative' }} onLayout={onLayout}>
-      <Animated.View style={{
-        position: 'absolute',
-        width: WORLD_WIDTH,
-        height: WORLD_HEIGHT,
-        transform: [{ translateX: worldOffset.x }, { translateY: worldOffset.y }],
-      }}>
-        {/* Grass */}
-        <View style={{ position: 'absolute', left: 0, top: 0, width: WORLD_WIDTH, height: WORLD_HEIGHT, backgroundColor: GRASS }} />
+    <View style={styles.root} onLayout={onLayout}>
+      <Canvas style={StyleSheet.absoluteFill}>
+        <Group transform={[{ translateX: ox }, { translateY: oy }, { scale: SCALE }]}>
+          <Picture picture={staticPicture} />
 
-        {/* Main roads */}
-        {MAIN_ROADS.filter(r => rectVisible(r.x, r.y, r.w, r.h)).map((r, i) => (
-          <View key={`road-${i}`} style={{ position: 'absolute', left: r.x, top: r.y, width: r.w, height: r.h, backgroundColor: DIRT_ROAD }} />
-        ))}
+          {/* Player chevron — inverse-scaled so it stays a fixed pixel size on screen */}
+          <Group
+            transform={[
+              { translateX: px },
+              { translateY: py },
+              { rotate: angle },
+              { scale: 1 / SCALE },
+            ]}
+          >
+            <Path path={CHEVRON_PATH} color={PLAYER_FILL} style="fill" />
+            <Path
+              path={CHEVRON_PATH}
+              color={PLAYER_OUTLINE}
+              style="stroke"
+              strokeWidth={2.5}
+              strokeJoin="round"
+            />
+          </Group>
+        </Group>
 
-        {/* Trail segments */}
-        {TRAILS.filter(t => trailVisible(t.cx, t.cy, t.len)).map((t, i) => (
-          <View key={`trail-${i}`} style={{
-            position: 'absolute',
-            left: t.cx - t.len / 2,
-            top: t.cy - TRAIL_W / 2,
-            width: t.len,
-            height: TRAIL_W,
-            backgroundColor: DIRT_ROAD,
-            transform: [{ rotate: `${t.angle}deg` }],
-          }} />
-        ))}
-
-        {/* Town grounds */}
-        {TOWN_GROUNDS.filter(g => rectVisible(g.x, g.y, g.w, g.h)).map((g, i) => (
-          <View key={`tg-${i}`} style={{ position: 'absolute', left: g.x, top: g.y, width: g.w, height: g.h, backgroundColor: TOWN_GROUND }} />
-        ))}
-
-        {/* Town walls */}
-        {ALL_WALLS.filter(w => rectVisible(w.x, w.y, w.w, w.h)).map((w, i) => (
-          <View key={`wall-${i}`} style={{ position: 'absolute', left: w.x, top: w.y, width: w.w, height: w.h, backgroundColor: WALL_COLOR }} />
-        ))}
-
-        {/* Buildings */}
-        {ALL_BUILDINGS
-          .map((b, i) => ({ b, i }))
-          .filter(({ b }) => rectVisible(b.x, b.y, b.w, b.h))
-          .map(({ b, i }) => (
-            <View key={`bldg-${i}`} style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, backgroundColor: BUILDING_COLORS[i % BUILDING_COLORS.length] }} />
-          ))
-        }
-
-        {/* Trees */}
-        {FIELD_TREES.filter(t => circleVisible(t.x, t.y, t.r)).map((tree, i) => (
-          <View key={`tree-${i}`}>
-            <View style={{ position: 'absolute', left: tree.x - tree.r * 0.2, top: tree.y, width: tree.r * 0.4, height: tree.r * 0.6, backgroundColor: TREE_TRUNK }} />
-            <View style={{ position: 'absolute', left: tree.x - tree.r, top: tree.y - tree.r, width: tree.r * 2, height: tree.r * 2, borderRadius: tree.r, backgroundColor: TREE_COLOR }} />
-          </View>
-        ))}
-
-        {/* Rocks */}
-        {FIELD_ROCKS.filter(r => circleVisible(r.x, r.y, r.r)).map((rock, i) => (
-          <View key={`rock-${i}`}>
-            <View style={{ position: 'absolute', left: rock.x - rock.r + 3, top: rock.y - rock.r * 0.7 + 4, width: rock.r * 2, height: rock.r * 1.4, borderRadius: rock.r, backgroundColor: ROCK_SHADOW }} />
-            <View style={{ position: 'absolute', left: rock.x - rock.r, top: rock.y - rock.r * 0.7, width: rock.r * 2, height: rock.r * 1.4, borderRadius: rock.r, backgroundColor: ROCK_COLOR }} />
-          </View>
-        ))}
-
-        {/* Player */}
-        <Animated.View style={{
-          position: 'absolute',
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          backgroundColor: PLAYER_COLOR,
-          borderWidth: 2,
-          borderColor: 'white',
-          transform: [
-            { translateX: Animated.add(playerAnim.x, playerOffsetX) },
-            { translateY: Animated.add(playerAnim.y, playerOffsetY) },
-          ],
-        }} />
-      </Animated.View>
+        {/* Soft corner vignette for atmosphere */}
+        {vw > 0 && vh > 0 && (
+          <Rect x={0} y={0} width={vw} height={vh}>
+            <RadialGradient
+              c={vec(vw / 2, vh / 2)}
+              r={Math.max(vw, vh) * 0.85}
+              colors={['#00000000', '#0a0d0666']}
+              positions={[0.55, 1.0]}
+            />
+          </Rect>
+        )}
+      </Canvas>
     </View>
   )
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: GRASS_BASE, overflow: 'hidden' },
+})
 
 export default WorldCanvas
