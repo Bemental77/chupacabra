@@ -1,0 +1,98 @@
+================================================================
+CHUPACABRA — PLAY STORE LISTING COPY
+================================================================
+
+APP TITLE (≤30 chars on listing, ≤50 hard cap):
+----------------------------------------------------------------
+Chupacabra
+(10 chars — clean, no keyword stuffing. Title is for branding;
+keywords belong in the descriptions per Play policy.)
+
+ALTERNATIVE TITLE if keyword indexation needed:
+Chupacabra: Top-Down ARPG
+(25 chars)
+
+
+SHORT DESCRIPTION (≤80 chars):
+----------------------------------------------------------------
+Top-down ARPG. Auto-aim combat. Loot, builds, timed trials.
+(59 chars)
+
+
+FULL DESCRIPTION (≤4000 chars) — see store-description-long.txt
+----------------------------------------------------------------
+
+
+PUBLISHER NAME (Play Console developer name):
+----------------------------------------------------------------
+wi-ts LLC
+(builds brand continuity for future apps under same LLC)
+
+
+CATEGORY:
+----------------------------------------------------------------
+Primary: Games > Role Playing
+Tags (if available): Action, RPG, Singleplayer, Open World
+
+
+CONTENT RATING:
+----------------------------------------------------------------
+Likely Teen (fantasy violence, blood). Submit honest answers to
+the IARC questionnaire — Google will assign based on those.
+
+
+PRIVACY POLICY URL:
+----------------------------------------------------------------
+https://chupacabra.app/privacy
+
+(Required even with no data collection. Page included as
+privacy.html in this bundle.)
+
+
+CONTACT EMAIL:
+----------------------------------------------------------------
+bementcw@gmail.com  (or set up support@chupacabra.app once domain mail is wired)
+
+
+================================================================
+ASSET FILE MANIFEST
+================================================================
+
+In-app icons (src/assets/):
+  icon.png                       1024x1024  Main app icon
+  adaptive-icon.png              1024x1024  Android adaptive foreground
+  favicon.png                    64x64      Web tab icon
+
+Play Store listing:
+  store-icon-512.png             512x512    Store listing icon (32-bit PNG)
+  feature-graphic-1024x500.png   1024x500   Feature graphic (no alpha)
+  screenshot-1-world.png         1080x1920  Phone screenshot
+  screenshot-2-inventory.png     1080x1920
+  screenshot-3-skills.png        1080x1920
+  screenshot-4-map.png           1080x1920
+  screenshot-5-trial.png         1080x1920
+  screenshot-6-complete.png      1080x1920
+
+Web pages (deploy to chupacabra.app):
+  index.html                     Landing page
+  privacy.html                   Privacy policy
+
+
+================================================================
+APP.JSON SNIPPET (expo / react-native)
+================================================================
+
+{
+  "expo": {
+    "icon": "./src/assets/icon.png",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/adaptive-icon.png",
+        "backgroundColor": "#0a0807"
+      }
+    },
+    "web": {
+      "favicon": "./src/assets/favicon.png"
+    }
+  }
+}

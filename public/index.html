@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Chupacabra</title>
+    <style id="expo-reset">
+      html, body { height: 100%; }
+      body { overflow: hidden; background: #0a0807; }
+      #root { display: flex; height: 100%; flex: 1; }
+    </style>
+    <style id="chupacabra-splash-style">
+      /* Splash overlay — shown until the React tree mounts something into
+         #root. Same dark palette as the world background so the transition
+         doesn't flash. Pure CSS animation so no JS is needed pre-bundle. */
+      #chupacabra-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #0a0807;
+        color: #ebe1cd;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Cinzel', Georgia, serif;
+        transition: opacity 320ms ease-out;
+        background-image:
+          radial-gradient(circle at 15% 10%, rgba(80, 8, 8, 0.12) 0%, transparent 40%),
+          radial-gradient(circle at 85% 90%, rgba(30, 30, 35, 0.16) 0%, transparent 50%);
+      }
+      #chupacabra-splash.hidden { opacity: 0; pointer-events: none; }
+      .splash-title {
+        font-size: 44px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 36px;
+        color: #ebe1cd;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+      }
+      .splash-bar {
+        width: 240px;
+        height: 8px;
+        background: #2a1f1a;
+        border: 2px solid #0a0807;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+      }
+      .splash-bar::after {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 50%;
+        background: linear-gradient(90deg, transparent 0%, #c84236 30%, #ffd86b 50%, #c84236 70%, transparent 100%);
+        animation: splash-slide 1.3s linear infinite;
+      }
+      @keyframes splash-slide {
+        0%   { transform: translateX(-100%); }
+        100% { transform: translateX(280%); }
+      }
+      .splash-tagline {
+        margin-top: 20px;
+        color: #8c8273;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 11px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+      }
+    </style>
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+
+    <!-- React mounts into #root. Expo auto-injects the bundle script tag
+         just before the final body close. -->
+    <div id="root"></div>
+
+    <!-- Pre-React splash. Removed by the observer below once the bundle has
+         loaded and the React tree has mounted its first child. -->
+    <div id="chupacabra-splash">
+      <div class="splash-title">CHUPACABRA</div>
+      <div class="splash-bar"></div>
+      <div class="splash-tagline">Loading</div>
+    </div>
+
+    <script>
+      // Hide the splash as soon as React mounts something into #root.
+      // MutationObserver fires on the first childList change. We also set a
+      // safety timeout to remove the splash unconditionally after 30s so a
+      // broken bundle doesn't leave the user staring at a loading bar forever.
+      (function () {
+        var splash = document.getElementById('chupacabra-splash');
+        var root = document.getElementById('root');
+        if (!splash || !root) return;
+        function hide() {
+          splash.classList.add('hidden');
+          setTimeout(function () {
+            if (splash.parentNode) splash.parentNode.removeChild(splash);
+          }, 400);
+        }
+        var observer = new MutationObserver(function () {
+          if (root.children.length > 0) {
+            hide();
+            observer.disconnect();
+          }
+        });
+        observer.observe(root, { childList: true });
+        // Safety net — if the bundle never mounts (network error, bundle bug),
+        // remove the splash after 30s so any error UI underneath becomes visible.
+        setTimeout(function () {
+          if (splash.parentNode) hide();
+          observer.disconnect();
+        }, 30000);
+      })();
+    </script>
+  </body>
+</html>

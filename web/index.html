@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chupacabra — Top-Down ARPG for Mobile</title>
+<meta name="description" content="Top-down ARPG. Auto-aim combat. Loot, builds, timed trials. Built for one-handed mobile play.">
+<meta property="og:title" content="Chupacabra">
+<meta property="og:description" content="Top-down ARPG. Auto-aim combat. Loot, builds, timed trials.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://chupacabra.app">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0807;
+    --bg-panel: #16110e;
+    --bg-card: #1d1612;
+    --bone: #ebe1cd;
+    --bone-dim: #8c8273;
+    --blood: #a01616;
+    --blood-bright: #d2231e;
+    --steel: #738086;
+    --steel-light: #c8ccd0;
+    --gold: #c8a546;
+    --rule: #2a1f1a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--bone);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(80, 8, 8, 0.10) 0%, transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(30, 30, 35, 0.12) 0%, transparent 50%);
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg,
+        transparent 0px, transparent 2px,
+        rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 3px);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ----- NAV ----- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 8, 7, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--rule);
+    padding: 16px 32px;
+  }
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+  .brand-mark { width: 32px; height: 32px; }
+  .brand-name {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--bone);
+  }
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--bone-dim);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--bone); }
+
+  /* ----- HERO ----- */
+  .hero {
+    position: relative;
+    padding: 80px 32px 120px;
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    z-index: 2;
+  }
+  .hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+    width: 100%;
+  }
+  .hero-eyebrow {
+    color: var(--blood-bright);
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: inline-block;
+    padding-left: 36px;
+    position: relative;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 2px;
+    background: var(--blood);
+  }
+  .hero h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(56px, 8vw, 112px);
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    color: var(--bone);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    text-shadow: 4px 4px 0 rgba(70, 8, 8, 0.4);
+  }
+  .hero-tag {
+    font-size: 20px;
+    color: var(--bone-dim);
+    margin-bottom: 12px;
+    letter-spacing: 0.02em;
+  }
+  .hero-sub {
+    font-size: 16px;
+    color: var(--bone-dim);
+    margin-bottom: 40px;
+    max-width: 480px;
+  }
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--blood);
+    color: var(--bone);
+    padding: 18px 32px;
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 2px solid var(--blood-bright);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .hero-cta:hover {
+    background: var(--blood-bright);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--bg-panel);
+  }
+  .hero-cta-note {
+    display: block;
+    color: var(--bone-dim);
+    font-size: 11px;
+    margin-top: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .hero-icon-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  .hero-icon {
+    width: 100%;
+    max-width: 440px;
+    aspect-ratio: 1 / 1;
+    filter: drop-shadow(0 12px 32px rgba(160, 22, 22, 0.25));
+    animation: subtle-rise 6s ease-in-out infinite;
+  }
+  @keyframes subtle-rise {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+    pointer-events: none;
+  }
+
+  /* ----- FEATURES ----- */
+  .features {
+    padding: 120px 32px;
+    position: relative;
+    z-index: 2;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-head {
+    max-width: 1200px;
+    margin: 0 auto 80px;
+    text-align: center;
+  }
+  .section-eyebrow {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .section-head h2 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--bone);
+  }
+  .section-head h2 + .underline {
+    width: 60px;
+    height: 3px;
+    background: var(--blood);
+    margin: 24px auto 0;
+  }
+  .feature-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  .feature-card {
+    background: var(--bg-panel);
+    padding: 40px 32px;
+    transition: background 0.2s;
+  }
+  .feature-card:hover { background: var(--bg-card); }
+  .feature-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--blood-bright);
+    margin-bottom: 16px;
+  }
+  .feature-card h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bone);
+    margin-bottom: 16px;
+  }
+  .feature-card p {
+    color: var(--bone-dim);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* ----- SCREENS STRIP ----- */
+  .screens {
+    padding: 120px 32px;
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+  }
+  .screens-strip {
+    display: flex;
+    gap: 24px;
+    overflow-x: auto;
+    padding: 16px 8px 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--blood) var(--bg-panel);
+  }
+  .screens-strip::-webkit-scrollbar { height: 8px; }
+  .screens-strip::-webkit-scrollbar-track { background: var(--bg-panel); }
+  .screens-strip::-webkit-scrollbar-thumb { background: var(--blood); }
+  .screen-card {
+    flex: 0 0 auto;
+    width: 280px;
+    aspect-ratio: 9 / 16;
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+    position: relative;
+  }
+  .screen-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ----- THE BLEED (what's not here) ----- */
+  .bleed {
+    padding: 120px 32px;
+    background: var(--bg);
+    position: relative;
+    z-index: 2;
+    border-top: 1px solid var(--rule);
+  }
+  .bleed-inner {
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  .bleed h2 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--bone);
+    margin-bottom: 8px;
+  }
+  .bleed .h-sub {
+    color: var(--bone-dim);
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+  }
+  .nopes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .nope {
+    background: var(--bg-panel);
+    border-left: 3px solid var(--blood);
+    padding: 20px 24px;
+    font-size: 15px;
+    color: var(--bone);
+    position: relative;
+  }
+  .nope::before {
+    content: 'NO';
+    position: absolute;
+    top: 8px; right: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--blood-bright);
+  }
+
+  /* ----- FOOTER ----- */
+  footer {
+    padding: 64px 32px 48px;
+    background: var(--bg);
+    border-top: 1px solid var(--rule);
+    position: relative;
+    z-index: 2;
+  }
+  .footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+  .footer-brand {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+  }
+  .footer-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+  .footer-links a {
+    color: var(--bone-dim);
+    text-decoration: none;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--bone); }
+
+  @media (max-width: 800px) {
+    .hero-inner { grid-template-columns: 1fr; gap: 64px; text-align: center; }
+    .hero-eyebrow { display: inline-block; }
+    .hero-icon { max-width: 280px; }
+    .nav-links { gap: 20px; }
+    .nav-links a { font-size: 11px; }
+    .hero, .features, .screens, .bleed { padding-left: 20px; padding-right: 20px; }
+  }
+  @media (max-width: 480px) {
+    nav { padding: 12px 20px; }
+    .nav-links li:not(:last-child) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="brand">
+      <svg class="brand-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="steel-nav" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#d8dce2"/>
+            <stop offset="50%" stop-color="#73787e"/>
+            <stop offset="100%" stop-color="#2d3034"/>
+          </linearGradient>
+        </defs>
+        <path d="M 78,28 L 82,22 L 76,18 L 68,14 L 58,11 L 48,10 L 38,12 L 28,18 L 20,26 L 14,36 L 11,46 L 10,56 L 13,66 L 19,76 L 28,84 L 38,89 L 48,90 L 58,89 L 68,86 L 74,82 L 80,78 L 82,72 L 76,68 L 70,73 L 62,77 L 54,79 L 46,78 L 38,74 L 30,68 L 24,60 L 22,52 L 24,44 L 30,36 L 38,30 L 46,26 L 54,25 L 62,27 L 70,32 Z" fill="url(#steel-nav)" stroke="#0a0807" stroke-width="1.5"/>
+        <circle cx="79" cy="74" r="3.5" fill="#d2231e"/>
+        <ellipse cx="80" cy="84" rx="1.8" ry="3" fill="#a01616"/>
+        <circle cx="79" cy="26" r="3" fill="#d2231e"/>
+      </svg>
+      <span class="brand-name">CHUPACABRA</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#screens">Screens</a></li>
+      <li><a href="/privacy">Privacy</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <span class="hero-eyebrow">A wi-ts game</span>
+      <h1>Chupa<br>cabra</h1>
+      <div class="hero-tag">Top-down ARPG. Built for one hand.</div>
+      <p class="hero-sub">Auto-aim combat. Loot you actually equip. A 13-node skill tree with real choices. Timed trials with local personal-bests. No ads. No purchases. No internet required.</p>
+      <a href="#download" class="hero-cta" id="cta-top">
+        Get on Play Store
+        <span aria-hidden="true">→</span>
+      </a>
+      <span class="hero-cta-note">Android · coming soon</span>
+    </div>
+    <div class="hero-icon-wrap">
+      <!-- Inline SVG of the broken-metal C -->
+      <svg class="hero-icon" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-label="Chupacabra mark">
+        <defs>
+          <linearGradient id="steel-hero" x1="10%" y1="10%" x2="90%" y2="90%">
+            <stop offset="0%" stop-color="#f0f2f5"/>
+            <stop offset="35%" stop-color="#a3a8ae"/>
+            <stop offset="70%" stop-color="#5a5f64"/>
+            <stop offset="100%" stop-color="#2d3034"/>
+          </linearGradient>
+          <radialGradient id="blood-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ff4030" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#ff4030" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- Background subtle disc -->
+        <circle cx="100" cy="100" r="95" fill="#0d0a08"/>
+        <!-- Broken C polygon (jagged path) -->
+        <path d="M 156,56 L 164,44 L 152,36 L 136,28 L 116,22 L 96,20 L 76,24 L 56,36 L 40,52 L 28,72 L 22,92 L 20,112 L 26,132 L 38,152 L 56,168 L 76,178 L 96,180 L 116,178 L 136,172 L 148,164 L 160,156 L 164,144 L 152,136 L 140,146 L 124,154 L 108,158 L 92,156 L 76,148 L 60,136 L 48,120 L 44,104 L 48,88 L 60,72 L 76,60 L 92,52 L 108,50 L 124,54 L 140,64 Z" fill="url(#steel-hero)" stroke="#0a0807" stroke-width="2"/>
+        <!-- Cracks -->
+        <path d="M 80,50 L 92,68" stroke="#0a0807" stroke-width="1.5" fill="none"/>
+        <path d="M 50,100 L 64,108 L 70,118" stroke="#0a0807" stroke-width="1.5" fill="none"/>
+        <path d="M 120,140 L 132,150" stroke="#0a0807" stroke-width="1.5" fill="none"/>
+        <path d="M 60,150 L 50,140 L 56,128" stroke="#0a0807" stroke-width="1.5" fill="none"/>
+        <!-- Blood at top tip -->
+        <circle cx="156" cy="54" r="20" fill="url(#blood-glow)"/>
+        <circle cx="156" cy="54" r="9" fill="#d2231e"/>
+        <ellipse cx="158" cy="68" rx="4" ry="6" fill="#a01616"/>
+        <!-- Blood at bottom tip with drip -->
+        <circle cx="156" cy="146" r="22" fill="url(#blood-glow)"/>
+        <circle cx="156" cy="146" r="10" fill="#d2231e"/>
+        <path d="M 156,154 Q 158,170 156,184 Q 154,192 156,196 L 158,196 Q 160,192 158,184 Q 162,170 158,154 Z" fill="#a01616"/>
+        <circle cx="156" cy="196" r="3" fill="#a01616"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="section-head">
+    <div class="section-eyebrow">Six things that matter</div>
+    <h2>The Loop</h2>
+    <div class="underline"></div>
+  </div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-num">01 / COMBAT</div>
+      <h3>Auto-aim, not autoplay</h3>
+      <p>Targeting locks on. You still pick the skill, the timing, the move. Seven skills, a vigor generator/spender economy, a clean hotbar. Built for one hand.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">02 / LOOT</div>
+      <h3>Four rarities, real rolls</h3>
+      <p>Common, magic, rare, legendary — color-coded, stat-rolled, equip-or-shard. Three slots: weapon, armor, trinket. Drops change how the next run plays, not what you're allowed to buy.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">03 / BUILDS</div>
+      <h3>A skill tree that branches</h3>
+      <p>Thirteen nodes. Prereqs. Forks early, narrows late. Vigor or Crit at level one. Reach the Apex node and you've committed. Choose like it matters.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">04 / WORLD</div>
+      <h3>50,000 × 25,000</h3>
+      <p>A procedural open world to wander, or skip it. Towns, dungeons, ruins, points of interest. No story gating. No forced tutorials past the first run.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">05 / TRIAL</div>
+      <h3>Five to fifteen minutes</h3>
+      <p>The endgame: a procedural maze, a wall-clock timer counting up, seven elites between you and the exit. Locally stored personal-best. Beat your last run.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">06 / OFFLINE</div>
+      <h3>No internet. No account.</h3>
+      <p>Plays on planes, in basements, at the cabin. Progress saves to your device. No cloud sync, no leaderboards, no telemetry. It runs because you opened it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="screens" id="screens">
+  <div class="section-head">
+    <div class="section-eyebrow">Look at it</div>
+    <h2>Screens</h2>
+    <div class="underline"></div>
+  </div>
+  <div class="screens-strip">
+    <div class="screen-card"><img src="/screenshot-1-world.png" alt="World view with auto-aim combat" loading="lazy"></div>
+    <div class="screen-card"><img src="/screenshot-2-inventory.png" alt="Inventory with rarity-colored items" loading="lazy"></div>
+    <div class="screen-card"><img src="/screenshot-3-skills.png" alt="Skill tree" loading="lazy"></div>
+    <div class="screen-card"><img src="/screenshot-4-map.png" alt="World map" loading="lazy"></div>
+    <div class="screen-card"><img src="/screenshot-5-trial.png" alt="Mid-trial maze" loading="lazy"></div>
+    <div class="screen-card"><img src="/screenshot-6-complete.png" alt="Trial complete with new best" loading="lazy"></div>
+  </div>
+</section>
+
+<section class="bleed">
+  <div class="bleed-inner">
+    <h2>What's not here</h2>
+    <div class="h-sub">— the absences are the point —</div>
+    <div class="nopes">
+      <div class="nope">Ads</div>
+      <div class="nope">Microtransactions</div>
+      <div class="nope">Premium currency</div>
+      <div class="nope">Paywalled gear</div>
+      <div class="nope">Internet requirement</div>
+      <div class="nope">Account signup</div>
+      <div class="nope">Online leaderboards</div>
+      <div class="nope">Telemetry / tracking</div>
+    </div>
+  </div>
+</section>
+
+<footer id="download">
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">wi-ts LLC</div>
+      <div style="color: var(--bone-dim); font-size: 12px; margin-top: 4px;">A small studio. Honest games. Chupacabra is the first.</div>
+    </div>
+    <ul class="footer-links">
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="mailto:hello@chupacabra.app">Contact</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

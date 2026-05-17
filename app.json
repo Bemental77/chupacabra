@@ -1,23 +1,28 @@
 {
-  "name": "Chupacabra",
-  "displayName": "Chupacabra",
   "expo": {
-    "name": "Chupacabra Maze Game",
+    "name": "Chupacabra",
     "slug": "chupacabra",
     "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "icon": "./src/assets/icon.png",
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wits.chupacabra",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.wits.chupacabra",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0a0807"
       }
     },
     "web": {
-      "favicon": "./src/assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./src/assets/favicon.png"
     }
   }
 }

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Chupacabra</title>
+<meta name="description" content="Privacy policy for Chupacabra. No data collected, transmitted, or shared.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0807;
+    --bg-panel: #16110e;
+    --bone: #ebe1cd;
+    --bone-dim: #8c8273;
+    --blood: #a01616;
+    --blood-bright: #d2231e;
+    --steel: #738086;
+    --gold: #c8a546;
+    --rule: #2a1f1a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--bone);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 16px;
+    line-height: 1.7;
+    min-height: 100vh;
+    /* Subtle grain via radial gradient overlay */
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(60, 6, 6, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(30, 30, 35, 0.12) 0%, transparent 50%);
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg,
+        transparent 0px, transparent 2px,
+        rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 3px);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    position: relative;
+    z-index: 2;
+  }
+  header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 32px;
+    margin-bottom: 56px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .brand-mark {
+    width: 36px; height: 36px;
+    display: block;
+  }
+  .brand-name {
+    font-family: 'Cinzel', serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--bone);
+    text-decoration: none;
+  }
+  .brand-name:hover { color: var(--blood-bright); }
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(40px, 6vw, 64px);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.05;
+    color: var(--bone);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  h1::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 3px;
+    background: var(--blood);
+    margin-top: 24px;
+  }
+  .updated {
+    color: var(--bone-dim);
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 16px;
+  }
+  section { margin-bottom: 48px; }
+  h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bone);
+    margin-bottom: 18px;
+    padding-left: 16px;
+    border-left: 3px solid var(--blood);
+  }
+  p {
+    color: var(--bone);
+    margin-bottom: 16px;
+    font-size: 15px;
+  }
+  p strong, p b {
+    color: var(--bone);
+    font-weight: 500;
+    background: var(--bg-panel);
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+  ul {
+    list-style: none;
+    margin-bottom: 16px;
+  }
+  ul li {
+    padding-left: 24px;
+    position: relative;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+  ul li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--blood);
+    font-weight: 700;
+  }
+  a { color: var(--blood-bright); text-decoration: none; border-bottom: 1px dotted var(--blood); }
+  a:hover { color: var(--bone); border-color: var(--bone); }
+  .callout {
+    background: var(--bg-panel);
+    border-left: 3px solid var(--gold);
+    padding: 20px 24px;
+    margin: 24px 0;
+    font-size: 15px;
+  }
+  footer {
+    margin-top: 96px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    color: var(--bone-dim);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  footer a { color: var(--bone-dim); border: 0; }
+  footer a:hover { color: var(--bone); }
+  @media (max-width: 600px) {
+    .wrap { padding: 48px 20px 80px; }
+    h2 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <!-- Inline SVG: simplified broken C mark -->
+      <svg class="brand-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="steel" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#d8dce2"/>
+            <stop offset="50%" stop-color="#73787e"/>
+            <stop offset="100%" stop-color="#2d3034"/>
+          </linearGradient>
+        </defs>
+        <!-- jagged C path (manually defined to mirror the icon style) -->
+        <path d="M 78,28 L 82,22 L 76,18 L 68,14 L 58,11 L 48,10 L 38,12 L 28,18 L 20,26 L 14,36 L 11,46 L 10,56 L 13,66 L 19,76 L 28,84 L 38,89 L 48,90 L 58,89 L 68,86 L 74,82 L 80,78 L 82,72 L 76,68 L 70,73 L 62,77 L 54,79 L 46,78 L 38,74 L 30,68 L 24,60 L 22,52 L 24,44 L 30,36 L 38,30 L 46,26 L 54,25 L 62,27 L 70,32 Z" fill="url(#steel)" stroke="#0a0807" stroke-width="1.5"/>
+        <!-- blood at bottom-right tip -->
+        <circle cx="79" cy="74" r="3.5" fill="#d2231e"/>
+        <ellipse cx="80" cy="84" rx="1.8" ry="3" fill="#a01616"/>
+        <!-- blood at top-right tip -->
+        <circle cx="79" cy="26" r="3" fill="#d2231e"/>
+      </svg>
+      <a href="/" class="brand-name">CHUPACABRA</a>
+    </div>
+    <h1>Privacy Policy</h1>
+    <div class="updated">Last updated: May 15, 2026</div>
+  </header>
+
+  <section>
+    <div class="callout">
+      <p style="margin: 0; color: var(--bone);"><strong style="background: transparent; color: var(--gold);">In short:</strong> Chupacabra collects nothing, transmits nothing, and shares nothing. Your progress lives on your device.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What we collect</h2>
+    <p>Nothing. Chupacabra does not collect, transmit, or share any personal data. We do not run analytics, advertising SDKs, telemetry, or third-party trackers. The app does not require an account, a login, or an internet connection.</p>
+  </section>
+
+  <section>
+    <h2>What lives on your device</h2>
+    <p>Chupacabra stores your game progress — character level, equipment, skill tree, personal-best run times, settings — using your device's local storage. This data never leaves your device.</p>
+    <p>If you uninstall Chupacabra, the local save data is deleted by the operating system. We cannot recover it because we never had a copy.</p>
+  </section>
+
+  <section>
+    <h2>Permissions</h2>
+    <p>Chupacabra does not request access to:</p>
+    <ul>
+      <li>Your contacts, calendar, photos, or files</li>
+      <li>Your location</li>
+      <li>Your camera or microphone</li>
+      <li>Your phone or SMS</li>
+      <li>Your network identity or device identifiers for advertising</li>
+    </ul>
+    <p>The only permission Chupacabra uses is the standard system storage required to write your local save file.</p>
+  </section>
+
+  <section>
+    <h2>Children</h2>
+    <p>Chupacabra is not directed at children under 13. Because we collect no personal data from anyone, no special handling is required under COPPA, GDPR-K, or similar regulations.</p>
+  </section>
+
+  <section>
+    <h2>Third-party services</h2>
+    <p>Chupacabra does not integrate with any third-party services. There are no ads, no social logins, no cloud sync, no leaderboards, and no analytics.</p>
+    <p>If this ever changes, we will update this policy and require explicit opt-in for any new data flow.</p>
+  </section>
+
+  <section>
+    <h2>Changes to this policy</h2>
+    <p>If the privacy practices of Chupacabra change in a future version, this page will be updated and the new version will be dated. Material changes will be flagged in the app's update notes.</p>
+  </section>
+
+  <section>
+    <h2>Contact</h2>
+    <p>Questions about this policy can be sent to the email address listed on the <a href="/">main page</a>.</p>
+  </section>
+
+  <footer>
+    <span>wi-ts LLC · Chupacabra</span>
+    <span><a href="/">chupacabra.app</a></span>
+  </footer>
+</div>
+</body>
+</html>

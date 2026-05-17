@@ -1,0 +1,41 @@
+CHUPACABRA — TOP-DOWN ARPG
+
+A top-down action-RPG built for mobile. Auto-aim combat keeps it one-handed. Loot, builds, and timed trials give it depth.
+
+— THE LOOP —
+
+Hunt creatures across a procedural open world. Loot drops are color-coded by rarity — common, magic, rare, legendary — with real stat rolls. Equip the gear that fits the build you're chasing. Spend skill points on a 13-node tree with prereqs and branching choices. Then run the Trial: a procedural maze, a wall-clock timer, eight elites to clear, and your local personal-best to beat. Five to fifteen minutes a run.
+
+— ONE-HANDED COMBAT —
+
+Auto-targeting handles aim so you don't have to fight the screen. Seven skills are mapped to a clean hotbar — basic attack, dash with i-frames, a vigor spender, a line beam, a homing projectile, a delayed-impact AoE, and an ultimate. A vigor generator/spender economy gives every fight a rhythm: build vigor with basics, dump it into a finisher. It's not a one-button autobattler. Positioning, timing, and skill choice all matter.
+
+— LOOT THAT MATTERS —
+
+Four rarity tiers with stat rolls that actually change how a build plays. Three equipment slots — weapon, armor, ring — each capable of legendary affixes. A legendary weapon with a fat damage roll reshapes your basic attack. A legendary ring with a move-speed roll changes how you kite. No paywalled gear. No premium currency. What you find is what you keep.
+
+— BUILDS WITH REAL CHOICES —
+
+The 13-node skill tree branches into three pillars — Combat, Survival, Movement. Stack damage and crit if you want to vaporize packs. Stack HP and regen if you want to take hits. Stack move speed and dash damage if you want to kite. Most builds can't max every line. Pick a lane and commit.
+
+— THE TRIAL —
+
+The endgame. A procedurally-generated maze, a timer counting up, and eight elite enemies to clear. Beat your previous best — locally stored, no leaderboards, no accounts, no internet required. Each run is five to fifteen minutes. Each new gear drop or skill point reshapes how you'll approach the next one.
+
+— OPEN WORLD, OR STRAIGHT TO THE FIGHT —
+
+A 50,000 by 25,000 unit procedural open world to wander when you want exploration. Towns, winding roads, rocky terrain, scattered resource nodes, hostile wilderness. Or skip it and jump straight into the Trial when you only have ten minutes. No story gating, no forced tutorial.
+
+— WHAT'S NOT HERE —
+
+No ads. No microtransactions. No premium currency. No gear locked behind paywalls. No internet connection required. No accounts. No leaderboards harvesting your data. Game progress saves locally on your device.
+
+— MADE BY —
+
+wi-ts LLC. A small studio building tight, honest games. Chupacabra is the first.
+
+Updates planned: more biomes, more enemy archetypes, more legendary affixes, optional cloud save. No promises about timelines. We ship when it's ready.
+
+— FEEDBACK —
+
+Bug reports and ideas welcome at chupacabra.app or by email.

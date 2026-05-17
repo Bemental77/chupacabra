@@ -1324,6 +1324,13 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@react-native-async-storage/async-storage@^3.0.2":
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/@react-native-async-storage/async-storage/-/async-storage-3.0.2.tgz#caf2d0d7038dc2b8a2a48971bdbd047db0a2ac86"
+  integrity sha512-XP0zDIl+1XoeuQ7f878qXKdl77zLwzLALPpxvNRc7ZtDh9ew36WSvOdQOhFkexMySapFAWxEbZxS8K8J2DU4eg==
+  dependencies:
+    idb "8.0.3"
+
 "@react-native/assets-registry@0.76.9":
   version "0.76.9"
   resolved "https://registry.yarnpkg.com/@react-native/assets-registry/-/assets-registry-0.76.9.tgz#ec63d32556c29bfa29e55b5e6e24c9d6e1ebbfac"
@@ -1664,7 +1671,7 @@
     invariant "^2.2.4"
     nullthrows "^1.1.1"
 
-"@shopify/react-native-skia@1":
+"@shopify/react-native-skia@^1":
   version "1.12.4"
   resolved "https://registry.yarnpkg.com/@shopify/react-native-skia/-/react-native-skia-1.12.4.tgz#35684082438895aa6a39c52c86128995d6185e3d"
   integrity sha512-8QDIBKSU7XB3Lc1kAv4jSFddTQK8AE+1AEoJnQLNllsiex1gufLQ8kN7rs9zii+iboSY8tYKT7ocV+5cE2Exdw==
@@ -3089,6 +3096,11 @@ hyphenate-style-name@^1.0.3:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/hyphenate-style-name/-/hyphenate-style-name-1.1.0.tgz#1797bf50369588b47b72ca6d5e65374607cf4436"
   integrity sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==
+
+idb@8.0.3:
+  version "8.0.3"
+  resolved "https://registry.yarnpkg.com/idb/-/idb-8.0.3.tgz#c91e558f15a8d53f1d7f53a094d226fc3ad71fd9"
+  integrity sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==
 
 ieee754@^1.1.13:
   version "1.2.1"
