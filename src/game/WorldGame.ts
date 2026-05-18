@@ -257,6 +257,10 @@ export interface WorldState {
   // Phase 4 — activity / dungeon.
   activityState: ActivityState
   arenaWalls: readonly Rect[]
+  // Organic rock polygons for the dungeon (marching-squares output). Same
+  // visual language as the overworld's TERRAIN_POLYGONS so the dungeon reads
+  // as a cavern of rocks, not a tile grid. Empty when not in a trial.
+  arenaPolygons: readonly number[][]
   // Lance cooldown (other new-skill CDs will join here).
   lanceCooldownEndsAt: number
   lanceCooldownMs: number
@@ -1303,6 +1307,7 @@ export class WorldGame {
 
   private activityState: ActivityState = { kind: 'idle' }
   private arenaWalls: Rect[] = []
+  private arenaPolygons: number[][] = []
 
   // Sum an affix value across every currently-equipped item. Cheap — 3 slots,
   // at most 4 affixes each. Called from the derived-stat getters below.
@@ -1423,14 +1428,20 @@ export class WorldGame {
     if (this.activityState.kind === 'running') return this.getState()
     if (this.isDead) return this.getState()
     const seed = Date.now() & 0x7fffffff
-    const layout = generateDungeonLayout()
+    const layout = generateDungeonLayout(seed)
     this.arenaWalls = layout.walls
-    // Pick spawn cells far enough from the entry to give the player a beat.
+    this.arenaPolygons = layout.polygons
+    // Pick spawn cells far enough from the entry to give the player a beat,
+    // but ALSO close enough that they can reach the player without needing
+    // pathfinding through the rocky dungeon. With aggro radius ~1400, a max
+    // spawn distance of 900 leaves plenty of headroom for the chase to start.
     const minSpawnDistSq = 200 * 200
+    const maxSpawnDistSq = 900 * 900
     const candidates = layout.passableCenters.filter((p) => {
       const dx = p.x - layout.entryX
       const dy = p.y - layout.entryY
-      return dx * dx + dy * dy > minSpawnDistSq
+      const d2 = dx * dx + dy * dy
+      return d2 > minSpawnDistSq && d2 < maxSpawnDistSq
     })
     // Fisher-Yates partial shuffle to pick distinct spawn cells.
     for (let i = candidates.length - 1; i > 0; i--) {
@@ -1477,6 +1488,7 @@ export class WorldGame {
     this.velocityX = 0
     this.velocityY = 0
     this.arenaWalls = []                    // explicit — no maze
+    this.arenaPolygons = []                 // open arena, no rocks either
     // Opening spawn — 3 elites in a ring around the player.
     for (let i = 0; i < SURVIVAL_OPENING_COUNT; i++) {
       this.spawnSurvivalEnemy(i / SURVIVAL_OPENING_COUNT * Math.PI * 2)
@@ -1596,6 +1608,7 @@ export class WorldGame {
   // Used by both abort and post-complete return.
   private cleanupActivity(returnX: number, returnY: number): void {
     this.arenaWalls = []
+    this.arenaPolygons = []
     this.enemies = this.enemies.filter((e) => !e.activityEnemy)
     this.playerX = returnX
     this.playerY = returnY
@@ -1714,6 +1727,7 @@ export class WorldGame {
       critDamagePct: this.getCritDamagePct(),
       activityState: this.activityState,
       arenaWalls: this.arenaWalls,
+      arenaPolygons: this.arenaPolygons,
       lanceCooldownEndsAt: this.lanceCooldownEndsAt,
       lanceCooldownMs: this.getLanceCooldownMs(),
       lanceCost: LANCE_COST,
@@ -1814,15 +1828,27 @@ export class WorldGame {
     if (this.isPaused || this.isDead) return this.getState()
     if (now < this.playerAttackCooldownEndsAt) return this.getState()
     this.playerAttackCooldownEndsAt = now + this.getAttackCooldownMs()
+    // Forward swing — hit zone sits IN FRONT of the chevron, not centered on
+    // the player. (Swords don't swing out of your ass.) Origin is offset
+    // along the facing vector so the back edge of the AoE is roughly at the
+    // player's chest.
+    const forward = PLAYER_RADIUS + PLAYER_ATTACK_RADIUS * 0.55
+    const hitX = this.playerX + this.facingX * forward
+    const hitY = this.playerY + this.facingY * forward
+    const hitR = PLAYER_ATTACK_RADIUS * 0.85
     this.activeFlashes.push({
+      // Anchor the flash on the PLAYER (renderer draws an arc swept around
+      // the player position, not centered on the hit zone) — looks like an
+      // actual swing rather than a detached burst.
       x: this.playerX,
       y: this.playerY,
       radius: PLAYER_ATTACK_RADIUS,
       startedAt: now,
       endsAt: now + PLAYER_ATTACK_FLASH_MS,
       kind: 'basic',
+      facing: Math.atan2(this.facingY, this.facingX),
     })
-    this.applyAoe(PLAYER_ATTACK_RADIUS, this.getAttackDamage(), true)
+    this.applyAoeAt(hitX, hitY, hitR, this.getAttackDamage(), true)
     return this.getState()
   }
 
@@ -2979,6 +3005,7 @@ export class WorldGame {
     this.vigor = 0
     this.spenderCooldownEndsAt = 0
     this.arenaWalls = []
+    this.arenaPolygons = []
     this.activityState = { kind: 'idle' }
     return this.getState()
   }

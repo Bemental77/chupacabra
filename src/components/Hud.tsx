@@ -81,20 +81,28 @@ export const Hud: React.FC<HudProps> = ({ game, onTalk }) => {
 
   return (
     <>
-    <View style={styles.root} pointerEvents="none">
-      <View style={styles.levelRow}>
-        <Text style={styles.levelText}>
-          LV {level}
-          {difficultyTier > 1 && <Text style={styles.tierBadge}>  T{difficultyTier}</Text>}
-        </Text>
-        {skillPoints > 0 && (
-          <Text style={styles.pointsText}>+{skillPoints} pt</Text>
-        )}
-      </View>
+    {/* Level badge — top-left corner, separate from the centered stat stack. */}
+    <View style={styles.levelBadge} pointerEvents="none">
+      <Text style={styles.levelText}>
+        LV {level}
+        {difficultyTier > 1 && <Text style={styles.tierBadge}>  T{difficultyTier}</Text>}
+      </Text>
+      {skillPoints > 0 && (
+        <Text style={styles.pointsText}>+{skillPoints} pt</Text>
+      )}
+    </View>
+    {/* Centered HP (red) over MP/Vigor (blue) — primary vital readout. */}
+    <View style={styles.statStack} pointerEvents="none">
       <View style={styles.hpFrame}>
         <View style={[styles.hpFill, { width: `${frac * 100}%` }]} />
         <Text style={styles.hpLabel}>
-          {Math.ceil(hp)} / {maxHp}
+          {Math.ceil(hp).toLocaleString()} / {maxHp.toLocaleString()}
+        </Text>
+      </View>
+      <View style={styles.vigorFrame}>
+        <View style={[styles.vigorFill, { width: `${vigorFrac * 100}%` }]} />
+        <Text style={styles.vigorLabel}>
+          {Math.floor(vigor)} / {maxVigor}
         </Text>
       </View>
       <View style={styles.xpFrame}>
@@ -103,10 +111,8 @@ export const Hud: React.FC<HudProps> = ({ game, onTalk }) => {
           XP {xp} / {xpToNext}
         </Text>
       </View>
-      <View style={styles.vigorFrame}>
-        <View style={[styles.vigorFill, { width: `${vigorFrac * 100}%` }]} />
-        <Text style={styles.vigorLabel}>VIG {Math.floor(vigor)} / {maxVigor}</Text>
-      </View>
+    </View>
+    <View style={styles.root} pointerEvents="none">
       {activity.kind === 'running' && (
         <View style={styles.trialBox}>
           <Text style={styles.trialTitle}>TRIAL · T{activity.tier}</Text>
@@ -181,15 +187,40 @@ export const Hud: React.FC<HudProps> = ({ game, onTalk }) => {
 }
 
 const styles = StyleSheet.create({
+  // Container for trial/toasts/death overlay — sits beneath the centered
+  // stat stack but uses the old top-left anchor so existing layout for those
+  // elements still works.
   root: {
+    position: 'absolute',
+    top: 92,
+    left: 12,
+    width: 220,
+  },
+  // Top-left badge with level + skill points (kept out of the centered stack
+  // so the stack reads as cleanly as the reference).
+  levelBadge: {
     position: 'absolute',
     top: 12,
     left: 12,
-    width: 200,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  // Centered HP (red) + MP/Vigor (blue) + thin XP bar. Anchored top-center
+  // via absolute positioning with left/right: 0 + alignItems: center on the
+  // parent stack.
+  statStack: {
+    position: 'absolute',
+    top: 12,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    gap: 3,
   },
   hpFrame: {
-    height: 18,
-    borderRadius: 4,
+    width: 260,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#2a1f15',
     borderWidth: 2,
     borderColor: '#0a0807',
@@ -211,8 +242,8 @@ const styles = StyleSheet.create({
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    fontVariant: ['tabular-nums'],
   },
-  levelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
   levelText: {
     color: '#f4e8c8',
     fontSize: 13,
@@ -235,14 +266,15 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   xpFrame: {
-    height: 10,
+    width: 200,
+    height: 6,
     borderRadius: 3,
     backgroundColor: '#2a1f15',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: '#0a0807',
     justifyContent: 'center',
     overflow: 'hidden',
-    marginTop: 3,
+    marginTop: 2,
   },
   xpFill: {
     position: 'absolute',
@@ -255,36 +287,37 @@ const styles = StyleSheet.create({
     color: '#f4e8c8',
     textAlign: 'center',
     fontWeight: '700',
-    fontSize: 9,
+    fontSize: 8,
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
   vigorFrame: {
-    height: 10,
-    borderRadius: 3,
-    backgroundColor: '#2a1f15',
+    width: 220,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#1f1610',
     borderWidth: 2,
     borderColor: '#0a0807',
     justifyContent: 'center',
     overflow: 'hidden',
-    marginTop: 3,
   },
   vigorFill: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: '#e87a2a',
+    backgroundColor: '#4a8fd9',
   },
   vigorLabel: {
     color: '#f4e8c8',
     textAlign: 'center',
     fontWeight: '700',
-    fontSize: 9,
+    fontSize: 10,
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    fontVariant: ['tabular-nums'],
   },
   trialBox: {
     marginTop: 8,

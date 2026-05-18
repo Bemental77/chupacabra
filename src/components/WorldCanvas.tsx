@@ -32,34 +32,61 @@ import { DAMAGE_NUMBER_TTL_MS, ENEMY_ATTACK_RADIUS, ENEMY_HIT_FLASH_MS } from '.
 import type { LootDrop } from '../game/Item'
 import { RARITY_COLORS } from '../game/Item'
 import type { Rect as ArenaRect, NPC } from '../game/WorldGame'
+import { HUT_SVG_TEXT } from '../assets/buildingSvg'
+import {
+  ARENA_ORIGIN_X, ARENA_ORIGIN_Y, ARENA_END_X, ARENA_END_Y,
+  ARENA_WIDTH, ARENA_HEIGHT, ARENA_CELL,
+} from '../game/DungeonGen'
 
-// Don't-Starve-ish gameplay palette
-const GRASS_BASE     = '#6e7d3f'  // olive grass — base ground color
-const GRASS_PATCH    = '#5d6b34'  // darker patches of grass for variation
-const DIRT_PATH      = '#a08660'  // tan dirt roads / clearings
-const ROCK_DARK      = '#4f4d48'  // rocky impassable terrain (was brown forest)
-const ROCK_SHADE     = '#37352f'  // shadow / inner crater
-const ROCK_HILITE    = '#6e6a62'  // top edge highlight on rocky terrain
-const TOWN_GROUND_C  = '#c9b07a'  // sandy town ground (man-made clearing)
-const WALL_COLOR     = '#3d2e20'
-const BUILDING_COLOR = '#5a4530'
-const BUILDING_OUT   = '#2a1f15'
-const TREE_CANOPY    = '#2a4218'  // dark forest green
-const TREE_HILITE    = '#3d5a25'  // lighter canopy highlight
-const TREE_SHADOW    = '#1a280f'  // tree drop-shadow
-const ROCK_FILL      = '#7a7268'  // individual decorative rocks
-const ROCK_SHAD      = '#4a4540'
-const ROCK_LIGHT     = '#9c948a'
-const PLAYER_FILL    = '#f4e8c8'
-const PLAYER_OUTLINE = '#2a1f15'
+// Pre-parse the hut sprite once at module load. Same instance is reused for
+// every building draw inside the static Picture; orientation handled by
+// rotating the canvas 90° for tall buildings.
+const HUT_SVG = Skia.SVG.MakeFromString(HUT_SVG_TEXT)
+
+// Dark-fantasy / horror-ARPG palette — moody-but-readable overworld, full
+// darkness in dungeons. Reverses the prior painted-cartoon palette.
+const GRASS_BASE     = '#3d4e2c'  // dark mossy green — base ground color
+const GRASS_PATCH    = '#2c3a1f'  // even darker patches for variation
+const DIRT_PATH      = '#5a4528'  // dark loam dirt road
+const DIRT_PATH_EDGE = '#2e220f'  // near-black rim around the road
+const ROCK_DARK      = '#2c2820'  // rocky impassable terrain
+const ROCK_SHADE     = '#15120e'  // deep shadow / inner crater
+const ROCK_HILITE    = '#454038'  // muted top edge highlight
+const TOWN_GROUND_C  = '#4a3a22'  // weathered worn town ground
+const WALL_COLOR     = '#1f1812'
+const BUILDING_COLOR = '#2a2218'  // legacy fallback (real buildings use SVG sprites)
+const BUILDING_OUT   = '#0a0807'
+const TREE_DARK      = '#0a140a'  // near-black tree outline
+const TREE_CANOPY    = '#162a14'  // almost-black canopy
+const TREE_HILITE    = '#2a4422'  // subtle highlight (just enough to read)
+const TREE_SHADOW    = '#000000'  // tree drop-shadow (rendered with alpha)
+const ROCK_FILL      = '#3a342c'  // individual decorative rocks
+const ROCK_SHAD      = '#15110e'
+const ROCK_LIGHT     = '#544c42'  // muted top-side highlight
+const ROCK_OUT       = '#0a0807'  // rock outline
+const PLAYER_FILL    = '#d4af5e'  // dim bronze arrow (no more bright gold)
+const PLAYER_OUTLINE = '#0a0807'
+const PLAYER_ORB     = '#8ac0e6'  // cool-blue orbs (cold magic, not pure cyan)
+const PLAYER_ORB_HALO = '#3a78b0'
+
+// Dungeon (trial) palette — used only when an activity is running.
+// Floor reads as worn dark stone with no tile grid; rocks use the SAME
+// shadow/fill/hilite layer pattern as the overworld's TERRAIN_POLYGONS so
+// the dungeon feels like a region of the same world.
+const TILE_BASE         = '#22201c'  // dark worn stone floor
+const TILE_DARK         = '#15120e'  // mossy darker stains
+const TILE_HILITE       = '#3a342a'  // rare wet-stone glints
+const DUNGEON_ROCK_DARK   = '#1a1612'   // main rock fill
+const DUNGEON_ROCK_SHADE  = '#0a0807'   // shadow under the rocks
+const DUNGEON_ROCK_HILITE = '#3a3429'   // top-edge rim
+const TORCH_GLOW     = '#ff6b1a'  // warm torch glow color
+const TORCH_CORE     = '#ffd07a'  // torch flame core
 
 // Enemy palette — dark crouched silhouette with a single red eye glint, sized
 // to read at the same SCALE as trees/rocks. Don't-Starve-ish but threatening.
 const ENEMY_BODY      = '#1f1411'
 const ENEMY_SHADOW    = '#0a0807'
-const ENEMY_EYE       = '#e84a2a'
-const ENEMY_HP_BG     = '#2a1f15'
-const ENEMY_HP_FG     = '#c84236'
+const ENEMY_EYE       = '#ff3a2a'  // brighter red for dread eye-glow
 const ATTACK_FLASH    = '#fff3c0'
 const ATTACK_FLASH_FG = '#ffd86b'
 const ULT_FLASH       = '#bce8ff'
@@ -67,8 +94,6 @@ const ULT_FLASH_FG    = '#6ab9ff'
 const SPENDER_FLASH    = '#ffb98a'
 const SPENDER_FLASH_FG = '#e87a2a'
 const ENEMY_TELEGRAPH = '#e84a2a'
-const ARENA_WALL_FILL = '#2f2722'
-const ARENA_WALL_EDGE = '#0f0c0a'
 // Bone Spear / Marrow Lance — spectral white core, lavender halo.
 const LANCE_CORE = '#ffffff'
 const LANCE_HALO = '#cfd9ff'
@@ -103,16 +128,18 @@ const HAIL_FLAKES: { x: number; y: number; s: number }[] = [
   { x:  0.45, y:  0.65, s: 0.5 },
   { x: -0.10, y: -0.15, s: 0.9 },
 ]
-// Target reticle — yellow chevron + ring around the auto-targeted enemy.
-const RETICLE_COLOR = '#ffd86b'
+// Target reticle — bright red arrows around the auto-targeted enemy (the
+// dread-ARPG convention: red = "you're locked, this is hostile").
+const RETICLE_COLOR = '#e63a2a'
 // Damaging-Dash trail behind the player while in the dash window.
-const DASH_TRAIL_COLOR = '#fff7c2'
+const DASH_TRAIL_COLOR = '#e6a83a'
 
-// Tier colors for enemy HP bars (D4 convention: white normal / blue elite / gold champion).
+// Tier colors for enemy HP bars — variations of red. Brighter/saturated for
+// rarer enemies so champions still pop visually but stay on-theme.
 const TIER_BAR_COLOR: Record<string, string> = {
-  normal:   '#c84236',
-  elite:    '#4a9bd9',
-  champion: '#e8c84a',
+  normal:   '#c0202a',
+  elite:    '#e83040',
+  champion: '#ff4040',
 }
 
 // Resource icon palette — 7 types, rendered with shape variation per type
@@ -128,7 +155,10 @@ const RESOURCE_COLORS = [
 const RESOURCE_DARK = '#1d1612'
 
 // Camera zoom: 1 world unit = SCALE screen pixels. Lower = more zoomed out.
-const SCALE = 0.28
+// Overworld is wide-open so we render small; dungeons get a 2× zoom so the
+// arena feels intimate rather than swallowed by viewport whitespace.
+const OVERWORLD_SCALE = 0.28
+const DUNGEON_SCALE   = 0.60
 
 // Screen shake on ultimate. Magnitude is in SCREEN px (not world units), so
 // the kick reads the same regardless of zoom. Decays linearly to 0.
@@ -145,6 +175,19 @@ const BURST_COLOR = '#ffe060'
 // Sized in screen pixels — drawn inside a group that undoes the world scale.
 const CHEVRON_PATH = Skia.Path.MakeFromSVGString(
   'M 18 0 L -12 -12 L -4 0 L -12 12 Z'
+)!
+
+// Player passive orbit: 3 cyan orbs riding a small ring around the player.
+// Orbit radius is in screen pixels (drawn inside the inverse-scaled group).
+const PLAYER_ORB_RADIUS_PX = 26
+const PLAYER_ORB_COUNT = 3
+const PLAYER_ORB_PERIOD_MS = 1800
+
+// Auto-target arrow path — a small chevron pointing in +x. Drawn 4× rotated
+// around the targeted enemy, each one squeezing toward the body. Authored in
+// a 16×16 box so it scales cleanly.
+const TARGET_ARROW_PATH = Skia.Path.MakeFromSVGString(
+  'M 0 -5 L 7 0 L 0 5 L 2 0 Z',
 )!
 
 // Diamond glyph for loot drops, world-space units (rotation-free, just a rhombus).
@@ -199,6 +242,8 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
     nearestNpc: NPC | null
     dashEndsAt: number
     isDead: boolean
+    activityKind: 'idle' | 'running' | 'complete'
+    arenaPolygons: readonly number[][]
   }>({
     enemies: [],
     activeFlashes: [],
@@ -214,6 +259,8 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
     nearestNpc: null,
     dashEndsAt: 0,
     isDead: false,
+    activityKind: 'idle',
+    arenaPolygons: [],
   })
   // Recent player positions for the damaging-dash trail. Kept as a ref so we
   // don't trigger renders for trail updates; the rAF loop re-renders anyway.
@@ -266,6 +313,8 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
         nearestNpc: state.nearestNpc,
         dashEndsAt: 0,
         isDead: state.isDead,
+        activityKind: state.activityState.kind,
+        arenaPolygons: state.arenaPolygons,
       }
       // Dash trail bookkeeping. WorldState doesn't expose dashEndsAt directly,
       // so we infer "dashing now" by player speed: above MAX_SPEED indicates
@@ -331,20 +380,28 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
           canvas.drawCircle(x, y, r, paint)
         }
 
-        // 2. Dirt roads — stroked polylines (each Road is a smooth curve between towns)
+        // 2. Dirt roads — darker edge stroke under a warm tan core. The edge
+        //    gives the road a hand-painted feel, like it was outlined first.
+        const roadEdgePaint = Skia.Paint()
+        roadEdgePaint.setColor(Skia.Color(DIRT_PATH_EDGE))
+        roadEdgePaint.setStyle(1)
+        roadEdgePaint.setStrokeJoin(1)
+        roadEdgePaint.setStrokeCap(1)
         const roadPaint = Skia.Paint()
         roadPaint.setColor(Skia.Color(DIRT_PATH))
         roadPaint.setStyle(1)
-        roadPaint.setStrokeJoin(1) // round
-        roadPaint.setStrokeCap(1)  // round
+        roadPaint.setStrokeJoin(1)
+        roadPaint.setStrokeCap(1)
         for (const road of MAIN_ROADS) {
           if (road.points.length < 2) continue
-          roadPaint.setStrokeWidth(road.width)
           const p = Skia.Path.Make()
           p.moveTo(road.points[0].x, road.points[0].y)
           for (let i = 1; i < road.points.length; i++) {
             p.lineTo(road.points[i].x, road.points[i].y)
           }
+          roadEdgePaint.setStrokeWidth(road.width + 6)
+          canvas.drawPath(p, roadEdgePaint)
+          roadPaint.setStrokeWidth(road.width)
           canvas.drawPath(p, roadPaint)
         }
 
@@ -391,43 +448,101 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
           canvas.drawRect({ x: w.x, y: w.y, width: w.w, height: w.h }, paint)
         }
 
-        // 6. Buildings (fill + dark outline with hand-drawn wobble)
-        const wobble = Skia.PathEffect.MakeDiscrete(6, 1.6, 0)
-        const outlinePaint = Skia.Paint()
-        outlinePaint.setColor(Skia.Color(BUILDING_OUT))
-        outlinePaint.setStyle(1)
-        outlinePaint.setStrokeWidth(4)
-        outlinePaint.setPathEffect(wobble)
-        paint.setColor(Skia.Color(BUILDING_COLOR))
-        for (const b of ALL_BUILDINGS) {
-          canvas.drawRect({ x: b.x, y: b.y, width: b.w, height: b.h }, paint)
-          canvas.drawRect({ x: b.x, y: b.y, width: b.w, height: b.h }, outlinePaint)
+        // 6. Buildings — authored SVG hut sprite (3/4-perspective wooden hut
+        //    with shingled roof). Rotated 90° for tall buildings so the
+        //    "wider than tall" sprite proportions still match the footprint.
+        //    Falls back to a flat-colored rect if SVG parsing failed at boot
+        //    (defensive — should never trip in practice).
+        if (HUT_SVG) {
+          for (const b of ALL_BUILDINGS) {
+            canvas.save()
+            if (b.h > b.w) {
+              // Rotate the canvas 90° around the building's center, then draw
+              // the horizontal sprite into the rotated h×w box so it lines up
+              // with the building's vertical footprint.
+              canvas.translate(b.x + b.w / 2, b.y + b.h / 2)
+              canvas.rotate(90, 0, 0)
+              canvas.translate(-b.h / 2, -b.w / 2)
+              canvas.drawSvg(HUT_SVG, b.h, b.w)
+            } else {
+              canvas.translate(b.x, b.y)
+              canvas.drawSvg(HUT_SVG, b.w, b.h)
+            }
+            canvas.restore()
+          }
+        } else {
+          paint.setColor(Skia.Color(BUILDING_COLOR))
+          for (const b of ALL_BUILDINGS) {
+            canvas.drawRect({ x: b.x, y: b.y, width: b.w, height: b.h }, paint)
+          }
         }
 
-        // 7. Trees — drop shadow + canopy + offset highlight (Don't Starve style)
+        // 7. Trees — painted blob-cluster. Ground shadow, then a dark outline
+        //    formed by 3 oversized dark circles, then 3 canopy circles inside,
+        //    then a single highlight blob on the upper-left.
         const treeShadowPaint = Skia.Paint()
         treeShadowPaint.setColor(Skia.Color(TREE_SHADOW))
+        treeShadowPaint.setAlphaf(0.45)
+        const treeDarkPaint = Skia.Paint()
+        treeDarkPaint.setColor(Skia.Color(TREE_DARK))
         const treeCanopyPaint = Skia.Paint()
         treeCanopyPaint.setColor(Skia.Color(TREE_CANOPY))
         const treeHiPaint = Skia.Paint()
         treeHiPaint.setColor(Skia.Color(TREE_HILITE))
+        // Cluster offsets (in r-relative units) — three lobes that overlap to
+        // form one blobby canopy. Deterministic; baked into the static picture.
+        const CANOPY_LOBES: { dx: number; dy: number; s: number }[] = [
+          { dx: -0.55, dy:  0.05, s: 0.82 },
+          { dx:  0.55, dy:  0.10, s: 0.78 },
+          { dx:  0.00, dy: -0.55, s: 0.92 },
+        ]
         for (const t of FIELD_TREES) {
-          canvas.drawCircle(t.x + 5, t.y + 7, t.r, treeShadowPaint)
-          canvas.drawCircle(t.x, t.y, t.r, treeCanopyPaint)
-          canvas.drawCircle(t.x - t.r * 0.25, t.y - t.r * 0.3, t.r * 0.45, treeHiPaint)
+          // Soft ground shadow, flattened ellipse-ish via two stacked circles
+          canvas.drawCircle(t.x + 4, t.y + t.r * 0.85, t.r * 0.95, treeShadowPaint)
+          // Dark outline lobes (slightly larger than the canopy fill)
+          for (const lobe of CANOPY_LOBES) {
+            canvas.drawCircle(
+              t.x + lobe.dx * t.r,
+              t.y + lobe.dy * t.r,
+              t.r * lobe.s + 3.5,
+              treeDarkPaint,
+            )
+          }
+          // Canopy fill lobes
+          for (const lobe of CANOPY_LOBES) {
+            canvas.drawCircle(
+              t.x + lobe.dx * t.r,
+              t.y + lobe.dy * t.r,
+              t.r * lobe.s,
+              treeCanopyPaint,
+            )
+          }
+          // Single highlight on the upper-left (light reads as coming from
+          // top-left throughout the scene).
+          canvas.drawCircle(t.x - t.r * 0.45, t.y - t.r * 0.55, t.r * 0.42, treeHiPaint)
         }
 
-        // 8. Rocks (individual scattered) — shadow + main + highlight
+        // 8. Rocks (individual scattered) — outlined rounded shape with a
+        //    bright top-side highlight curve. Reads as a hand-drawn pebble.
         const rockShadowPaint = Skia.Paint()
         rockShadowPaint.setColor(Skia.Color(ROCK_SHAD))
+        rockShadowPaint.setAlphaf(0.5)
+        const rockOutPaint = Skia.Paint()
+        rockOutPaint.setColor(Skia.Color(ROCK_OUT))
         const rockFillPaint = Skia.Paint()
         rockFillPaint.setColor(Skia.Color(ROCK_FILL))
         const rockHiPaint = Skia.Paint()
         rockHiPaint.setColor(Skia.Color(ROCK_LIGHT))
         for (const r of FIELD_ROCKS) {
-          canvas.drawCircle(r.x + 3, r.y + 4, r.r * 0.95, rockShadowPaint)
-          canvas.drawCircle(r.x, r.y, r.r * 0.9, rockFillPaint)
-          canvas.drawCircle(r.x - r.r * 0.25, r.y - r.r * 0.3, r.r * 0.35, rockHiPaint)
+          // Ground shadow (offset down-right, slightly squashed)
+          canvas.drawCircle(r.x + 3, r.y + r.r * 0.55, r.r * 0.95, rockShadowPaint)
+          // Dark outline
+          canvas.drawCircle(r.x, r.y, r.r * 0.95, rockOutPaint)
+          // Main fill
+          canvas.drawCircle(r.x, r.y, r.r * 0.82, rockFillPaint)
+          // Top-side highlight: a smaller circle clipped by drawing it offset
+          // up-left so only the visible cap reads as a lit edge.
+          canvas.drawCircle(r.x - r.r * 0.20, r.y - r.r * 0.32, r.r * 0.50, rockHiPaint)
         }
 
         // 9. Resource nodes — every node rendered (no thinning), each as a
@@ -555,6 +670,41 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
     []
   )
 
+  // Dungeon floor — flat dark stone with scattered noise stains. NO tile
+  // grid (user feedback: the grid reads as "a bunch of blocks", not a real
+  // environment). Pre-recorded once; the noise stains are deterministic and
+  // baked in.
+  const dungeonFloorPicture = useMemo(
+    () =>
+      createPicture((canvas) => {
+        const base = Skia.Paint()
+        base.setColor(Skia.Color(TILE_BASE))
+        canvas.drawRect({ x: ARENA_ORIGIN_X, y: ARENA_ORIGIN_Y, width: ARENA_WIDTH, height: ARENA_HEIGHT }, base)
+
+        // Sparse darker mossy patches scattered across the floor so it isn't
+        // a perfect flat color.
+        const dark = Skia.Paint()
+        dark.setColor(Skia.Color(TILE_DARK))
+        const hilite = Skia.Paint()
+        hilite.setColor(Skia.Color(TILE_HILITE))
+        let prng = 0x9e3779b9
+        const rand = () => { prng = (prng * 1664525 + 1013904223) & 0x7fffffff; return prng / 0x7fffffff }
+        const patchCount = 140
+        for (let i = 0; i < patchCount; i++) {
+          const x = ARENA_ORIGIN_X + rand() * ARENA_WIDTH
+          const y = ARENA_ORIGIN_Y + rand() * ARENA_HEIGHT
+          canvas.drawCircle(x, y, 6 + rand() * 14, dark)
+        }
+        // Occasional wet-stone glint
+        for (let i = 0; i < 40; i++) {
+          const x = ARENA_ORIGIN_X + rand() * ARENA_WIDTH
+          const y = ARENA_ORIGIN_Y + rand() * ARENA_HEIGHT
+          canvas.drawCircle(x, y, 1.5, hilite)
+        }
+      }),
+    [],
+  )
+
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout
     setViewport({ w: width, h: height })
@@ -563,20 +713,46 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
 
   const { w: vw, h: vh } = viewport
   const { x: px, y: py, angle } = playerRef.current
-  const { enemies, activeFlashes, beamFlashes, projectiles, pendingMeteors, dotZones, orbs, damageNumbers, loot, arenaWalls, targetEnemyId, nearestNpc } = combatRef.current
+  const { enemies, activeFlashes, beamFlashes, projectiles, pendingMeteors, dotZones, orbs, damageNumbers, loot, arenaPolygons, targetEnemyId, nearestNpc, activityKind } = combatRef.current
   const targetEnemy = targetEnemyId != null
     ? enemies.find((e) => e.id === targetEnemyId)
     : undefined
+  // Trials/survival render a self-contained dungeon scene. Camera clamps to
+  // arena bounds (instead of world bounds) so the overworld never bleeds
+  // through, and we skip drawing the overworld static Picture entirely.
+  const inDungeon = activityKind === 'running'
 
-  // Camera centers on player, clamped so we don't show beyond world edges.
-  const worldScreenW = WORLD_WIDTH * SCALE
-  const worldScreenH = WORLD_HEIGHT * SCALE
-  const baseOx = vw > 0
-    ? Math.min(0, Math.max(vw - worldScreenW, -(px * SCALE - vw / 2)))
-    : 0
-  const baseOy = vh > 0
-    ? Math.min(0, Math.max(vh - worldScreenH, -(py * SCALE - vh / 2)))
-    : 0
+  // Effective zoom — dungeons are tighter so the arena fills the viewport.
+  // Shadows the module-level OVERWORLD/DUNGEON constants for every SCALE
+  // reference below.
+  const SCALE = inDungeon ? DUNGEON_SCALE : OVERWORLD_SCALE
+
+  // Camera centers on player, clamped to either the world or the arena
+  // bounds depending on scene. Per-axis: if bounds fit inside the viewport,
+  // CENTER the bounds (instead of pinning to one edge). Otherwise standard
+  // follow-with-clamp.
+  const camBoundsX = inDungeon ? ARENA_ORIGIN_X : 0
+  const camBoundsY = inDungeon ? ARENA_ORIGIN_Y : 0
+  const camBoundsW = inDungeon ? ARENA_WIDTH  : WORLD_WIDTH
+  const camBoundsH = inDungeon ? ARENA_HEIGHT : WORLD_HEIGHT
+  const worldScreenW = camBoundsW * SCALE
+  const worldScreenH = camBoundsH * SCALE
+  const fitOrFollow = (
+    viewSize: number, boundsStart: number, boundsSize: number, playerCoord: number,
+  ): number => {
+    const boundsScreen = boundsSize * SCALE
+    if (boundsScreen <= viewSize) {
+      // Bounds fit — center them, ignore player position
+      return viewSize / 2 - (boundsStart + boundsSize / 2) * SCALE
+    }
+    const ideal = -(playerCoord * SCALE - viewSize / 2)
+    // Range: arena left flush with view left (max) → arena right flush with view right (min).
+    const maxOffset = -boundsStart * SCALE
+    const minOffset = viewSize - (boundsStart + boundsSize) * SCALE
+    return Math.min(maxOffset, Math.max(minOffset, ideal))
+  }
+  const baseOx = vw > 0 ? fitOrFollow(vw, camBoundsX, camBoundsW, px) : 0
+  const baseOy = vh > 0 ? fitOrFollow(vh, camBoundsY, camBoundsH, py) : 0
   // Apply shake — fresh random offset per frame, magnitude decays linearly.
   // The cull bounds use the un-shaken ox/oy so we don't pop content at the
   // edges during a kick.
@@ -603,15 +779,23 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
   return (
     <View style={styles.root} onLayout={onLayout}>
       <Canvas style={StyleSheet.absoluteFill}>
+        {/* Pitch-black backdrop — covers anything outside the camera-clamped
+            scene (matters most for dungeons, where any meadow leak would
+            break the illusion). */}
+        {vw > 0 && vh > 0 && (
+          <Rect x={0} y={0} width={vw} height={vh} color="#000000" />
+        )}
         <Group transform={[{ translateX: ox }, { translateY: oy }, { scale: SCALE }]}>
-          <Picture picture={staticPicture} />
+          {/* Pick the static scene by activity state — overworld at idle,
+              dungeon floor when a trial/survival run is active. */}
+          {inDungeon ? (
+            <Picture picture={dungeonFloorPicture} />
+          ) : (
+            <Picture picture={staticPicture} />
+          )}
 
-          {/* NPC interaction glow — pulsing gold ring around the nearest
-              interactable NPC. Reinforces the HUD's "Talk to X" prompt with
-              a worldspace cue so the player can spot the right NPC visually.
-              Radius matches NPC_INTERACT_RADIUS so the ring also doubles as
-              a "this is the trigger zone" hint. */}
-          {nearestNpc && (() => {
+          {/* NPC interaction glow — overworld only. */}
+          {!inDungeon && nearestNpc && (() => {
             const pulse = 0.45 + 0.25 * Math.sin(now / 220)
             return (
               <Group>
@@ -631,17 +815,59 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
             )
           })()}
 
-          {/* Arena (Trial) walls. Only present during an active activity;
-              drawn over the world content. */}
-          {arenaWalls.map((w, i) => (
-            <Group key={`aw${i}`}>
-              <Rect x={w.x} y={w.y} width={w.w} height={w.h} color={ARENA_WALL_FILL} />
-              <Rect
-                x={w.x} y={w.y} width={w.w} height={w.h}
-                color={ARENA_WALL_EDGE} style="stroke" strokeWidth={2}
-              />
-            </Group>
-          ))}
+          {/* Dungeon rock polygons — marching-squares output from the
+              dungeon noise field. Rendered as ORGANIC outcrops with the same
+              shadow + fill + hilite layer pattern as overworld TERRAIN_POLYGONS,
+              so the dungeon reads as a cavern within the same world. */}
+          {arenaPolygons.length > 0 && (() => {
+            // Build one combined path so the layered passes (shadow, fill,
+            // hilite) only need one drawPath per pass per layer.
+            const combined = Skia.Path.Make()
+            for (const poly of arenaPolygons) {
+              if (poly.length < 6) continue
+              combined.moveTo(poly[0], poly[1])
+              for (let k = 2; k < poly.length; k += 2) {
+                combined.lineTo(poly[k], poly[k + 1])
+              }
+              combined.close()
+            }
+            return (
+              <Group>
+                {/* shadow underlay (offset darker) */}
+                <Group transform={[{ translateX: 3 }, { translateY: 4 }]}>
+                  <Path path={combined} color={DUNGEON_ROCK_SHADE} />
+                </Group>
+                {/* main rock fill */}
+                <Path path={combined} color={DUNGEON_ROCK_DARK} />
+                {/* hilite rim along edges */}
+                <Path path={combined} color={DUNGEON_ROCK_HILITE} style="stroke" strokeWidth={2} />
+              </Group>
+            )
+          })()}
+
+          {/* Torches at the 4 arena corners — warm radial glow + flicker.
+              Only drawn in dungeon scenes (no torches in the overworld). */}
+          {inDungeon && (() => {
+            const flick = 0.85 + 0.15 * Math.sin(now / 95) * Math.cos(now / 137)
+            const torches = [
+              { x: ARENA_ORIGIN_X + 60,           y: ARENA_ORIGIN_Y + 60 },
+              { x: ARENA_END_X - 60,              y: ARENA_ORIGIN_Y + 60 },
+              { x: ARENA_ORIGIN_X + 60,           y: ARENA_END_Y - 60 },
+              { x: ARENA_END_X - 60,              y: ARENA_END_Y - 60 },
+            ]
+            return (
+              <Group>
+                {torches.map((t, i) => (
+                  <Group key={`tch${i}`}>
+                    <Circle cx={t.x} cy={t.y} r={200 * flick} color={TORCH_GLOW} opacity={0.12} />
+                    <Circle cx={t.x} cy={t.y} r={110 * flick} color={TORCH_GLOW} opacity={0.22} />
+                    <Circle cx={t.x} cy={t.y} r={28 * flick}  color={TORCH_GLOW} opacity={0.55} />
+                    <Circle cx={t.x} cy={t.y} r={9 * flick}   color={TORCH_CORE} opacity={0.95} />
+                  </Group>
+                ))}
+              </Group>
+            )
+          })()}
 
           {/* Loot drops — rarity-colored beam + ground diamond. Rendered
               BEFORE enemies so an enemy standing on a drop hides the diamond
@@ -740,7 +966,9 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
             }
             const showHpBar = e.hp < e.maxHp
             const hpFrac = Math.max(0, e.hp / e.maxHp)
-            const barColor = TIER_BAR_COLOR[e.tier] ?? ENEMY_HP_FG
+            const barColor = TIER_BAR_COLOR[e.tier] ?? TIER_BAR_COLOR.normal
+            // Dread pass — render enemies ~20% larger and silhouette-jagged.
+            const renderR = e.radius * 1.18
             // Telegraph: fill an attack-range circle that ramps in alpha as the
             // wind-up progresses, signaling "dash out NOW".
             const inWindUp = e.windUpEndsAt > now
@@ -749,6 +977,29 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
               : 0
             // Tier ring around bigger enemies for instant readability.
             const tierRingW = e.tier === 'champion' ? 3 : e.tier === 'elite' ? 2 : 0
+            // Blood-red bloom — gentle pulse around the body, brighter for
+            // higher tiers. Sells "monstrous" without spamming red everywhere.
+            const bloomAlpha = (e.tier === 'champion' ? 0.22 : e.tier === 'elite' ? 0.16 : 0.10)
+              * (0.85 + 0.15 * Math.sin(now / 240 + i * 1.3))
+            // Pre-compute 9 jagged silhouette spikes around the body (radial
+            // tips). Same count for every enemy; tier affects spike length.
+            const spikeLenMult = e.tier === 'champion' ? 0.45 : e.tier === 'elite' ? 0.35 : 0.22
+            const spikes: { tipX: number; tipY: number; b1x: number; b1y: number; b2x: number; b2y: number }[] = []
+            for (let k = 0; k < 9; k++) {
+              const a = (k / 9) * Math.PI * 2 + (i * 0.37)  // per-enemy rotation
+              const tipR = renderR * (1 + spikeLenMult * (0.7 + (k % 3) * 0.15))
+              const baseR = renderR * 0.92
+              const perp = a + Math.PI / 2
+              const half = renderR * 0.10
+              spikes.push({
+                tipX: e.x + Math.cos(a) * tipR,
+                tipY: e.y + Math.sin(a) * tipR,
+                b1x: e.x + Math.cos(a) * baseR + Math.cos(perp) * half,
+                b1y: e.y + Math.sin(a) * baseR + Math.sin(perp) * half,
+                b2x: e.x + Math.cos(a) * baseR - Math.cos(perp) * half,
+                b2y: e.y + Math.sin(a) * baseR - Math.sin(perp) * half,
+              })
+            }
             return (
               <Group key={i}>
                 {inWindUp && (
@@ -763,46 +1014,59 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
                     still reads on top. */}
                 {e.vulnerableUntil > now && (
                   <Circle
-                    cx={e.x} cy={e.y} r={e.radius + 6}
+                    cx={e.x} cy={e.y} r={renderR + 6}
                     color="#b66cf2"
                     style="stroke" strokeWidth={2.5}
                     opacity={0.5 + 0.3 * Math.sin(now / 160)}
                   />
                 )}
+                {/* Blood-red bloom under the body */}
+                <Circle cx={e.x} cy={e.y} r={renderR * 1.6} color="#a01010" opacity={bloomAlpha} />
                 {/* Drop shadow */}
-                <Circle cx={e.x + 3} cy={e.y + 5} r={e.radius * 0.95} color={ENEMY_SHADOW} />
+                <Circle cx={e.x + 3} cy={e.y + 5} r={renderR * 0.95} color={ENEMY_SHADOW} />
+                {/* Jagged silhouette spikes (drawn under body so they read
+                    as growing OUT of the creature, not stuck on top). */}
+                {spikes.map((s, sk) => (
+                  <Path
+                    key={`sp${sk}`}
+                    path={Skia.Path.MakeFromSVGString(
+                      `M ${s.b1x} ${s.b1y} L ${s.tipX} ${s.tipY} L ${s.b2x} ${s.b2y} Z`,
+                    )!}
+                    color={ENEMY_BODY}
+                  />
+                ))}
                 {/* Body */}
-                <Circle cx={e.x} cy={e.y} r={e.radius} color={ENEMY_BODY} />
+                <Circle cx={e.x} cy={e.y} r={renderR} color={ENEMY_BODY} />
                 {/* Hit flash — brief white overlay on the body when struck.
                     Alpha decays linearly over ENEMY_HIT_FLASH_MS so the strike
                     reads from across the screen, then fades cleanly. */}
                 {e.lastHitAt > 0 && now - e.lastHitAt < ENEMY_HIT_FLASH_MS && (
                   <Circle
-                    cx={e.x} cy={e.y} r={e.radius}
+                    cx={e.x} cy={e.y} r={renderR}
                     color="#ffffff"
                     opacity={1 - (now - e.lastHitAt) / ENEMY_HIT_FLASH_MS}
                   />
                 )}
-                {/* Tier silhouette overlay — elites get curved horns, champions
-                    get a crown of spikes. Distinct enough to read from across
-                    the screen without breaking the dark-blob aesthetic. */}
+                {/* Tier silhouette overlay — elites get longer curved horns,
+                    champions get a crown of spikes. These read AS THE BEAST
+                    not as a hat. */}
                 {e.tier === 'elite' && (
                   <Group>
-                    {/* Left horn */}
+                    {/* Left horn — bigger, curved further out */}
                     <Path
                       path={Skia.Path.MakeFromSVGString(
-                        `M ${e.x - e.radius * 0.5} ${e.y - e.radius * 0.7} `
-                        + `L ${e.x - e.radius * 0.8} ${e.y - e.radius * 1.5} `
-                        + `L ${e.x - e.radius * 0.25} ${e.y - e.radius * 0.9} Z`,
+                        `M ${e.x - renderR * 0.55} ${e.y - renderR * 0.7} `
+                        + `L ${e.x - renderR * 1.0} ${e.y - renderR * 1.8} `
+                        + `L ${e.x - renderR * 0.20} ${e.y - renderR * 0.9} Z`,
                       )!}
                       color={ENEMY_BODY}
                     />
                     {/* Right horn */}
                     <Path
                       path={Skia.Path.MakeFromSVGString(
-                        `M ${e.x + e.radius * 0.5} ${e.y - e.radius * 0.7} `
-                        + `L ${e.x + e.radius * 0.8} ${e.y - e.radius * 1.5} `
-                        + `L ${e.x + e.radius * 0.25} ${e.y - e.radius * 0.9} Z`,
+                        `M ${e.x + renderR * 0.55} ${e.y - renderR * 0.7} `
+                        + `L ${e.x + renderR * 1.0} ${e.y - renderR * 1.8} `
+                        + `L ${e.x + renderR * 0.20} ${e.y - renderR * 0.9} Z`,
                       )!}
                       color={ENEMY_BODY}
                     />
@@ -810,16 +1074,14 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
                 )}
                 {e.tier === 'champion' && (
                   <Group>
-                    {/* Crown of 5 spikes around the top half — each is a thin
-                        triangle pointing radially outward. */}
+                    {/* Crown of 5 long spikes */}
                     {[-0.9, -0.45, 0, 0.45, 0.9].map((rot, i) => {
-                      const cx = e.x + Math.sin(rot) * e.radius * 0.75
-                      const cy = e.y - Math.cos(rot) * e.radius * 0.75
-                      const tipX = e.x + Math.sin(rot) * e.radius * 1.55
-                      const tipY = e.y - Math.cos(rot) * e.radius * 1.55
-                      // Perpendicular base
+                      const cx = e.x + Math.sin(rot) * renderR * 0.75
+                      const cy = e.y - Math.cos(rot) * renderR * 0.75
+                      const tipX = e.x + Math.sin(rot) * renderR * 1.9
+                      const tipY = e.y - Math.cos(rot) * renderR * 1.9
                       const perp = rot + Math.PI / 2
-                      const halfBase = e.radius * 0.18
+                      const halfBase = renderR * 0.20
                       const b1x = cx + Math.sin(perp) * halfBase
                       const b1y = cy - Math.cos(perp) * halfBase
                       const b2x = cx - Math.sin(perp) * halfBase
@@ -836,45 +1098,111 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
                     })}
                   </Group>
                 )}
-                {/* Tier ring on elite/champion */}
+                {/* Tier ring on elite/champion — kept thin so it doesn't
+                    compete with the HP bar above. */}
                 {tierRingW > 0 && (
                   <Circle
-                    cx={e.x} cy={e.y} r={e.radius + 2}
+                    cx={e.x} cy={e.y} r={renderR + 2}
                     color={barColor}
                     style="stroke"
                     strokeWidth={tierRingW}
                   />
                 )}
-                {/* Eye(s) — champions get two for extra menace. */}
+                {/* Eye(s) — bright red with bloom halo. Sells the dread. */}
                 {e.tier === 'champion' ? (
                   <Group>
-                    <Circle cx={e.x - 4} cy={e.y - 4} r={3} color={ENEMY_EYE} />
-                    <Circle cx={e.x + 4} cy={e.y - 4} r={3} color={ENEMY_EYE} />
+                    <Circle cx={e.x - 5} cy={e.y - 5} r={9} color={ENEMY_EYE} opacity={0.30} />
+                    <Circle cx={e.x + 5} cy={e.y - 5} r={9} color={ENEMY_EYE} opacity={0.30} />
+                    <Circle cx={e.x - 5} cy={e.y - 5} r={4} color={ENEMY_EYE} />
+                    <Circle cx={e.x + 5} cy={e.y - 5} r={4} color={ENEMY_EYE} />
+                    <Circle cx={e.x - 5} cy={e.y - 5} r={1.5} color="#ffffff" />
+                    <Circle cx={e.x + 5} cy={e.y - 5} r={1.5} color="#ffffff" />
                   </Group>
                 ) : (
-                  <Circle cx={e.x - 3} cy={e.y - 4} r={3} color={ENEMY_EYE} />
-                )}
-                {/* HP bar above (only when damaged) */}
-                {showHpBar && (
                   <Group>
-                    <Rect x={e.x - e.radius} y={e.y - e.radius - 8} width={e.radius * 2} height={4} color={ENEMY_HP_BG} />
-                    <Rect x={e.x - e.radius} y={e.y - e.radius - 8} width={e.radius * 2 * hpFrac} height={4} color={barColor} />
+                    <Circle cx={e.x - 4} cy={e.y - 4} r={8} color={ENEMY_EYE} opacity={0.30} />
+                    <Circle cx={e.x + 4} cy={e.y - 4} r={8} color={ENEMY_EYE} opacity={0.30} />
+                    <Circle cx={e.x - 4} cy={e.y - 4} r={3.5} color={ENEMY_EYE} />
+                    <Circle cx={e.x + 4} cy={e.y - 4} r={3.5} color={ENEMY_EYE} />
+                    <Circle cx={e.x - 4} cy={e.y - 4} r={1.2} color="#ffffff" />
+                    <Circle cx={e.x + 4} cy={e.y - 4} r={1.2} color="#ffffff" />
                   </Group>
                 )}
+                {/* HP bar — thin red stroke above the enemy, no background
+                    plate. Width matches the body; depletes from right.
+                    Reference is clean and clinical: red = wound, no chrome. */}
+                {showHpBar && (() => {
+                  const barW = renderR * 2
+                  const barY = e.y - renderR * 1.85
+                  return (
+                    <Rect
+                      x={e.x - renderR}
+                      y={barY}
+                      width={barW * hpFrac}
+                      height={3}
+                      color={barColor}
+                    />
+                  )
+                })()}
               </Group>
             )
           })}
 
-          {/* Player AoE flashes — multiple can be active. */}
+          {/* Player AoE flashes — multiple can be active. The 'basic' kind
+              renders as a forward sword-swing arc (swept around the player
+              in the facing direction); everything else is a circular flash. */}
           {activeFlashes.map((f, idx) => {
             if (now >= f.endsAt) return null
             const total = f.endsAt - f.startedAt
             const remaining = (f.endsAt - now) / total
             const alpha = Math.max(0, Math.min(1, remaining))
+            const isBasic = f.kind === 'basic'
             const isUlt = f.kind === 'ultimate'
             const isSpender = f.kind === 'spender'
             const isMeteor = f.kind === 'meteor'
             const isFireball = f.kind === 'fireball'
+
+            if (isBasic && f.facing !== undefined) {
+              // Sword swing: an annular arc segment in front of the player,
+              // sweeping through a half-arc on either side of the facing angle.
+              // Built as a closed path: outer arc CW + inner arc CCW + close.
+              const halfArc = Math.PI / 3   // 60° → 120° total sweep
+              const inner = 16              // ≈ player radius + a tiny gap
+              const outer = f.radius
+              const a0 = f.facing - halfArc
+              const a1 = f.facing + halfArc
+              const p = Skia.Path.Make()
+              // Outer arc forward
+              const steps = 14
+              for (let i = 0; i <= steps; i++) {
+                const a = a0 + (a1 - a0) * (i / steps)
+                const x = f.x + Math.cos(a) * outer
+                const y = f.y + Math.sin(a) * outer
+                if (i === 0) p.moveTo(x, y); else p.lineTo(x, y)
+              }
+              // Inner arc back
+              for (let i = steps; i >= 0; i--) {
+                const a = a0 + (a1 - a0) * (i / steps)
+                const x = f.x + Math.cos(a) * inner
+                const y = f.y + Math.sin(a) * inner
+                p.lineTo(x, y)
+              }
+              p.close()
+              // Animate the swing — sweep wipe from a0 to a1 over the flash
+              // window (so it visually "slashes" rather than appearing whole).
+              // We approximate by ramping opacity higher in the middle of the
+              // window and tapering at both ends.
+              const t = 1 - remaining   // 0..1 from start to end of flash
+              const sweepAlpha = alpha * (t < 0.4 ? t / 0.4 : 1)
+              return (
+                <Group key={`af${idx}`}>
+                  <Path path={p} color={ATTACK_FLASH_FG} opacity={sweepAlpha * 0.7} />
+                  <Path path={p} color={ATTACK_FLASH} style="stroke" strokeWidth={3}
+                    opacity={sweepAlpha} />
+                </Group>
+              )
+            }
+
             const fillColor =
               isUlt ? ULT_FLASH_FG :
               isSpender ? SPENDER_FLASH_FG :
@@ -1022,30 +1350,57 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
             )
           })}
 
-          {/* Target reticle — yellow ring + chevron above the auto-targeted
-              enemy. Pulses gently so it reads as "live tracking" rather than
-              a static marker. */}
+          {/* Auto-target indicator — 4 small yellow arrows pinching inward
+              at the locked enemy's cardinal points, scale-pulsing so it reads
+              as live tracking. Plus a faint dotted aim-trail from the player
+              toward the target so the player knows what they'll hit. */}
           {targetEnemy && (() => {
-            const pulse = 0.55 + 0.3 * Math.sin(now / 180)
-            const r = targetEnemy.radius + 10
+            const pulse = 0.85 + 0.18 * Math.sin(now / 160)
+            const offset = (targetEnemy.radius + 14) * pulse
+            const arrowScale = 3.0
+            // Aim trail — series of small dots along the segment from player
+            // toward the target. Spacing in WORLD units; only render those
+            // between the player and the target with some headroom.
+            const dx = targetEnemy.x - px
+            const dy = targetEnemy.y - py
+            const dist = Math.hypot(dx, dy)
+            const trailDots: { x: number; y: number; o: number }[] = []
+            if (dist > 40) {
+              const ux = dx / dist
+              const uy = dy / dist
+              const step = 18
+              const startD = 22
+              const endD = dist - targetEnemy.radius - 10
+              for (let d = startD; d < endD; d += step) {
+                const fade = 1 - d / dist  // brighter near player, fades toward target
+                trailDots.push({ x: px + ux * d, y: py + uy * d, o: 0.25 + fade * 0.35 })
+              }
+            }
             return (
               <Group>
-                <Circle
-                  cx={targetEnemy.x} cy={targetEnemy.y} r={r}
-                  color={RETICLE_COLOR} style="stroke" strokeWidth={2}
-                  opacity={pulse}
-                />
-                {/* Down-pointing chevron above the enemy */}
-                <Path
-                  path={Skia.Path.MakeFromSVGString(
-                    `M ${targetEnemy.x - 6} ${targetEnemy.y - r - 12}
-                     L ${targetEnemy.x}     ${targetEnemy.y - r - 4}
-                     L ${targetEnemy.x + 6} ${targetEnemy.y - r - 12}`,
-                  )!}
-                  color={RETICLE_COLOR} style="stroke" strokeWidth={2.5}
-                  strokeJoin="round" strokeCap="round"
-                  opacity={pulse}
-                />
+                {trailDots.map((p, i) => (
+                  <Circle key={`at${i}`} cx={p.x} cy={p.y} r={2.5}
+                    color={RETICLE_COLOR} opacity={p.o}
+                  />
+                ))}
+                {/* 4 arrows: left, top, right, bottom (rotated 0, 90, 180, 270 CCW
+                    relative to "pointing at target center from outside"). */}
+                {[0, 1, 2, 3].map((i) => {
+                  const a = (i / 4) * Math.PI * 2
+                  const ax = targetEnemy.x + Math.cos(a) * offset
+                  const ay = targetEnemy.y + Math.sin(a) * offset
+                  return (
+                    <Group key={`tg${i}`} transform={[
+                      { translateX: ax },
+                      { translateY: ay },
+                      { rotate: a + Math.PI }, // point inward, toward enemy
+                      { scale: arrowScale },
+                    ]}>
+                      <Path path={TARGET_ARROW_PATH} color={RETICLE_COLOR} style="fill" />
+                      <Path path={TARGET_ARROW_PATH} color="#1a140f" style="stroke" strokeWidth={0.6} />
+                    </Group>
+                  )
+                })}
               </Group>
             )
           })()}
@@ -1059,37 +1414,70 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
             </Group>
           ))}
 
-          {/* Player chevron — inverse-scaled so it stays a fixed pixel size on screen */}
+          {/* Player chevron — inverse-scaled so it stays a fixed pixel size on
+              screen. Three cyan orbs orbit around it (passive visual hook). */}
           <Group
             transform={[
               { translateX: px },
               { translateY: py },
-              { rotate: angle },
               { scale: 1 / SCALE },
             ]}
           >
-            <Path path={CHEVRON_PATH} color={PLAYER_FILL} style="fill" />
-            <Path
-              path={CHEVRON_PATH}
-              color={PLAYER_OUTLINE}
-              style="stroke"
-              strokeWidth={2.5}
-              strokeJoin="round"
-            />
+            {/* Orbiting orbs (drawn under the chevron so the hero sits on top). */}
+            {Array.from({ length: PLAYER_ORB_COUNT }, (_, i) => {
+              const phase = (now % PLAYER_ORB_PERIOD_MS) / PLAYER_ORB_PERIOD_MS
+              const a = phase * Math.PI * 2 + (i / PLAYER_ORB_COUNT) * Math.PI * 2
+              const ox2 = Math.cos(a) * PLAYER_ORB_RADIUS_PX
+              const oy2 = Math.sin(a) * PLAYER_ORB_RADIUS_PX * 0.55  // squashed orbit, top-down feel
+              return (
+                <Group key={`pob${i}`}>
+                  <Circle cx={ox2} cy={oy2} r={5} color={PLAYER_ORB_HALO} opacity={0.45} />
+                  <Circle cx={ox2} cy={oy2} r={3} color={PLAYER_ORB} />
+                  <Circle cx={ox2} cy={oy2} r={1.4} color="#ffffff" />
+                </Group>
+              )
+            })}
+            {/* Chevron itself rotates to facing; orbs above do not. */}
+            <Group transform={[{ rotate: angle }]}>
+              <Path path={CHEVRON_PATH} color={PLAYER_FILL} style="fill" />
+              <Path
+                path={CHEVRON_PATH}
+                color={PLAYER_OUTLINE}
+                style="stroke"
+                strokeWidth={2.5}
+                strokeJoin="round"
+              />
+            </Group>
           </Group>
         </Group>
 
-        {/* Soft corner vignette for atmosphere */}
-        {vw > 0 && vh > 0 && (
-          <Rect x={0} y={0} width={vw} height={vh}>
-            <RadialGradient
-              c={vec(vw / 2, vh / 2)}
-              r={Math.max(vw, vh) * 0.85}
-              colors={['#00000000', '#0a0d0666']}
-              positions={[0.55, 1.0]}
-            />
-          </Rect>
-        )}
+        {/* Player light radius — radial gradient centered on the player's
+            screen position. Transparent in a tight zone around the player and
+            ramps to near-black at the edge. Sells "lantern in the dark"
+            without losing readability. Dungeons get a tighter, harder falloff
+            than the overworld. */}
+        {vw > 0 && vh > 0 && (() => {
+          const playerScreenX = ox + px * SCALE
+          const playerScreenY = oy + py * SCALE
+          const outerR = inDungeon
+            ? Math.max(vw, vh) * 0.55     // tight in dungeons
+            : Math.max(vw, vh) * 0.95     // generous on the overworld
+          // Inner ramp position controls how big the bright zone is. Smaller
+          // means the bright zone is smaller (darker scene).
+          const innerStop = inDungeon ? 0.18 : 0.30
+          const midStop = inDungeon ? 0.55 : 0.70
+          const edgeColor = inDungeon ? '#000000f5' : '#000000bb'
+          return (
+            <Rect x={0} y={0} width={vw} height={vh}>
+              <RadialGradient
+                c={vec(playerScreenX, playerScreenY)}
+                r={outerR}
+                colors={['#00000000', '#00000050', edgeColor]}
+                positions={[innerStop, midStop, 1.0]}
+              />
+            </Rect>
+          )
+        })()}
       </Canvas>
 
       {/* Damage numbers — overlay RN Text since Skia text needs a loaded font.
@@ -1131,7 +1519,7 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({ game, inputRef, onView
                 },
               ]}
             >
-              {d.value}
+              {d.kind === 'crit' ? `${d.value}!` : d.value}
             </Text>
           )
         })}

@@ -94,6 +94,12 @@ All writes are best-effort: a quota error or unavailable storage must not crash 
 
 `src/theme/Colors.ts` exports `Colors`, `Spacing`, `Typography` for UI chrome (ControlPanel, Hud, modal screens). World scene colors are intentionally hardcoded at the top of `WorldCanvas.tsx` — those are art-direction constants, not theme tokens, and shouldn't be replaced with Colors entries.
 
+### `web/` is the marketing site, not the game
+
+`web/` (CNAME `chupacabra.app`, static HTML/CSS in `web/index.html` + `web/privacy.html`) is the public marketing page deployed to GitHub Pages by `.github/workflows/pages.yml` on push to the `prod` branch. It is completely separate from `yarn web` (which runs the actual game via Expo for `Platform.OS === 'web'`). Don't confuse the two — edits to `web/` ship the landing page; edits under `src/` ship the game.
+
+`docs/diablo4-gameplay-loop.md` is a design reference, not implementation notes.
+
 ## TypeScript / module config notes
 
 - `tsconfig.json` uses `"module": "Node16"` + `"moduleResolution": "node16"` with `"allowImportingTsExtensions": true`. Imports are extensionless; don't add `.ts`/`.tsx` extensions unless you have a reason.

@@ -126,6 +126,10 @@ export interface AttackFlash {
   endsAt: number
   startedAt: number
   kind: AttackFlashKind
+  // Only set for the 'basic' kind — direction the swing is facing (radians,
+  // CCW from +x). Renderer uses this to draw an arc segment in front of the
+  // player rather than a circle.
+  facing?: number
 }
 
 export type DamageNumberKind = 'normal' | 'crit' | 'taken'
@@ -144,7 +148,9 @@ export const DAMAGE_NUMBER_TTL_MS = 600
 export const ENEMY_RADIUS = 14
 export const ENEMY_MAX_HP = 30
 export const ENEMY_SPEED = 2.6
-export const ENEMY_AGGRO_RADIUS = 420
+// Aggro radius must be larger than typical room/arena dimensions, otherwise
+// enemies on the far side of the dungeon will just stand there.
+export const ENEMY_AGGRO_RADIUS = 1400
 export const ENEMY_ATTACK_RADIUS = 30
 export const ENEMY_ATTACK_COOLDOWN_MS = 900
 export const ENEMY_ATTACK_DAMAGE = 8

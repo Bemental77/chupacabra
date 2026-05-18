@@ -81,7 +81,8 @@ function getSkillRuntime(state: WorldState, id: SkillId): {
   }
 }
 
-// Round button used everywhere in the combat cluster.
+// Round button used everywhere in the combat cluster. Sits inside a flex
+// row (no absolute positioning) so the cluster reflows cleanly.
 const RoundButton: React.FC<{
   size: number
   // When iconKind is set, the SkillIcon is the primary visual; label is shown
@@ -93,11 +94,7 @@ const RoundButton: React.FC<{
   dim?: boolean
   disabled?: boolean
   onPress: () => void
-  // Absolute position within the cluster. Left/top are required when used in
-  // the cluster (it's `position: 'relative'`).
-  left: number
-  top: number
-}> = ({ size, iconKind, label, sublabel, bg, dim, disabled, onPress, left, top }) => {
+}> = ({ size, iconKind, label, sublabel, bg, dim, disabled, onPress }) => {
   const iconSize = size >= 76 ? Math.round(size * 0.56) : Math.round(size * 0.62)
   return (
     <TouchableOpacity
@@ -106,7 +103,6 @@ const RoundButton: React.FC<{
         {
           width: size, height: size, borderRadius: size / 2,
           backgroundColor: bg,
-          left, top,
         },
         dim && styles.roundBtnDim,
       ]}
@@ -155,40 +151,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     return () => clearInterval(id)
   }, [game])
 
-  // ---- Combat cluster geometry (relative to cluster top-left) ----
-  // PRIMARY (88px) anchors the bottom-right corner where the thumb rests.
-  // 4 skill slots (60px each) arc around the primary along a quarter-circle
-  // from ~9 o'clock to ~12 o'clock. Dash + Ult are fixed at the cluster
-  // corners.  Cluster bounding box: 260 wide × 260 tall.
-  const PRIMARY_SIZE = 88
-  const BTN = 60
-  const cluster = { width: 260, height: 260 }
-  // Primary anchored bottom-right
-  const primaryPos = {
-    left: cluster.width - PRIMARY_SIZE,
-    top:  cluster.height - PRIMARY_SIZE,
-  }
-  // Centerpoint of the primary — origin for the arc the slots ride on.
-  const cx = primaryPos.left + PRIMARY_SIZE / 2
-  const cy = primaryPos.top  + PRIMARY_SIZE / 2
-  const ARC_RADIUS = 118  // distance from primary center to each slot center
-  // Slot angles in radians, measured CCW from +x. 0=right, π/2=down, π=left, 3π/2=up.
-  // We want slots to arc up-and-left of the primary, from ~9 o'clock (π) up
-  // through 11/12 o'clock (3π/2) so the thumb sweeps naturally.
-  const slotAngles = [
-    Math.PI,            // 9 o'clock — closest, in line with primary
-    Math.PI * 1.20,     // 10 o'clock-ish (above-left)
-    Math.PI * 1.40,     // 11 o'clock-ish
-    Math.PI * 1.60,     // ~12-1 o'clock — top
-  ]
-  const slotPositions = slotAngles.map((a) => ({
-    left: cx + Math.cos(a) * ARC_RADIUS - BTN / 2,
-    top:  cy + Math.sin(a) * ARC_RADIUS - BTN / 2,
-  }))
-  // Ult sits at the top-right of the cluster, tucked above the primary
-  const ultPos = { left: cluster.width - BTN, top: 8 }
-  // Dash sits at the bottom-left of the cluster, opposite the primary
-  const dashPos = { left: 0, top: cluster.height - BTN }
+  // ---- Combat cluster: 3 stacked rows aligned right ----
+  // Row 1: primary (gold sword) + dash (gray double-chevron) — biggest
+  //        buttons, top-right corner where the thumb rests.
+  // Row 2: 3 small ability circles — loadout slots 0, 1, 2.
+  // Row 3: 3 small ability circles — loadout slot 3, ultimate (star), and
+  //        an empty/placeholder slot if no 6th ability exists.
+  // Sizes match the reference's chunky-icon read; all buttons use the same
+  // RoundButton with flex layout (no absolute positioning).
+  const PRIMARY_SIZE = 72
+  const BTN = 56
 
   const renderSkillSlot = (slotIndex: number) => {
     const id = worldState?.loadout.slots[slotIndex]
@@ -207,8 +179,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         dim={dim}
         disabled={dim}
         onPress={() => onCastSlot(slotIndex)}
-        left={slotPositions[slotIndex].left}
-        top={slotPositions[slotIndex].top}
       />
     )
   }
@@ -222,47 +192,46 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.rightSide}>
-        <View style={[styles.cluster, cluster]}>
-            {/* Skill slots first so PRIMARY draws on top if they overlap. */}
-            {renderSkillSlot(3)}
-            {renderSkillSlot(2)}
-            {renderSkillSlot(1)}
-            {renderSkillSlot(0)}
-            {/* Dash */}
+        <View style={styles.cluster}>
+          {/* Row 1 — primary attack + dash */}
+          <View style={styles.row}>
             <RoundButton
-              size={BTN}
+              size={PRIMARY_SIZE}
+              iconKind="attack"
+              bg="#d4a13a"
+              dim={attackDim}
+              onPress={onAttack}
+            />
+            <RoundButton
+              size={PRIMARY_SIZE}
               iconKind="dash"
               sublabel={dashRemaining > 500 ? (dashRemaining / 1000).toFixed(1) : undefined}
-              bg="#3a7bb0"
+              bg="#3a3a3a"
               dim={dashDim}
               disabled={dashDim}
               onPress={onDash}
-              left={dashPos.left}
-              top={dashPos.top}
             />
-            {/* Ultimate */}
+          </View>
+          {/* Row 2 — loadout slots 0, 1, 2 */}
+          <View style={styles.row}>
+            {renderSkillSlot(0)}
+            {renderSkillSlot(1)}
+            {renderSkillSlot(2)}
+          </View>
+          {/* Row 3 — loadout slot 3 + ultimate (always-on) */}
+          <View style={styles.row}>
+            {renderSkillSlot(3)}
             <RoundButton
               size={BTN}
               iconKind="ultimate"
               sublabel={ultRemaining > 500 ? (ultRemaining / 1000).toFixed(1) : undefined}
-              bg="#7a5cb0"
+              bg="#3a7bb0"
               dim={ultDim}
               disabled={ultDim}
               onPress={onUltimate}
-              left={ultPos.left}
-              top={ultPos.top}
-            />
-            {/* Primary attack — the anchor. Drawn last so it sits on top. */}
-            <RoundButton
-              size={PRIMARY_SIZE}
-              iconKind="attack"
-              bg="#c84236"
-              dim={attackDim}
-              onPress={onAttack}
-              left={primaryPos.left}
-              top={primaryPos.top}
             />
           </View>
+        </View>
 
           {/* Utility row — small chip buttons below the cluster. */}
           <View style={styles.utilityRow}>
@@ -312,15 +281,15 @@ const styles = StyleSheet.create({
   // component) owns the bottom-left half — no overlap.
   container: { alignItems: 'flex-end', justifyContent: 'flex-end', padding: 12 },
   rightSide: { alignItems: 'flex-end', gap: 8 },
-  cluster: { position: 'relative' },
+  cluster: { gap: 8, alignItems: 'flex-end' },
+  row: { flexDirection: 'row', gap: 10, justifyContent: 'flex-end' },
   roundBtn: {
-    position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(0,0,0,0.45)',
+    borderColor: 'rgba(0,0,0,0.55)',
     shadowColor: '#000',
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.45,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 3,
     elevation: 4,
